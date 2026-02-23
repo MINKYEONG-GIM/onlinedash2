@@ -874,7 +874,7 @@ st.subheader(f"상세 현황 · {selected_flow}")
 
 display_df = flow_df.copy()
 display_df.insert(0, "NO", range(1, len(display_df) + 1))
-show_cols = ["NO", "styleCode", "productName", "colorName", "inboundQty", "outboundQty", "stockQty", "_촬영", "_등록", "상태"]
+show_cols = ["NO", "styleCode", "productName", "inboundQty", "outboundQty", "stockQty", "_촬영", "_등록", "상태"]
 show_cols = [c for c in show_cols if c in display_df.columns]
 display_df = display_df[show_cols]
 display_df = display_df.rename(columns={
