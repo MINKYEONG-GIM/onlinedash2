@@ -884,7 +884,7 @@ st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 def to_excel(df):
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(output) as writer:
         df.to_excel(writer, index=False, sheet_name="상세현황")
     return output.getvalue()
 
