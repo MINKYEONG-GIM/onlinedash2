@@ -791,7 +791,11 @@ _flow_conditions = {
     "출고": (filtered_df["outboundQty"] > 0),
     "촬영": (filtered_df["__shot_done"] == 1),
     "등록": (filtered_df["isRegistered"] == 1),
-    "판매개시": (filtered_df["isOnSale"] == 1) | (filtered_df["isRegistered"] == 1),
+    "판매개시": (
+        (pd.to_numeric(filtered_df["salesQty"], errors="coerce").fillna(0) > 0)
+        | (filtered_df["isOnSale"] == 1)
+        | (filtered_df["isRegistered"] == 1)
+    ),
 }
 flow_counts = pd.Series({
     flow: filtered_df.loc[cond]["styleCode"].nunique()
@@ -858,7 +862,15 @@ def make_status_column(df, flow):
     if flow == "등록":
         return df["isRegistered"].apply(lambda x: "등록" if (pd.notna(x) and int(x) == 1) else "미등록")
     if flow == "판매개시":
-        return df["isOnSale"].apply(lambda x: "판매중" if (pd.notna(x) and int(x) == 1) else "판매대기")
+        return df.apply(
+            lambda r: "판매중"
+            if (
+                (pd.to_numeric(r.get("salesQty"), errors="coerce") or 0) > 0
+                or (pd.notna(r.get("isOnSale")) and int(r.get("isOnSale", 0)) == 1)
+            )
+            else "판매대기",
+            axis=1,
+        )
     return pd.Series("", index=df.index)
 
 flow_df["상태"] = make_status_column(flow_df, selected_flow)
@@ -873,7 +885,10 @@ elif selected_flow == "촬영":
 elif selected_flow == "등록":
     flow_df["_정렬키"] = flow_df["isRegistered"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
 elif selected_flow == "판매개시":
-    flow_df["_정렬키"] = flow_df["isOnSale"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
+    flow_df["_정렬키"] = flow_df.apply(
+        lambda r: 0 if (pd.isna(r.get("salesQty")) or (pd.to_numeric(r.get("salesQty"), errors="coerce") or 0) == 0) else 1,
+        axis=1,
+    )
 else:
     flow_df["_정렬키"] = 0
 flow_df = flow_df.sort_values(by=["_정렬키", "styleCode"], ascending=[True, True])
