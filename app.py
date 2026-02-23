@@ -70,9 +70,8 @@ def open_or_create_spreadsheet(client, spreadsheet_id=None, spreadsheet_title=No
         return client.create(title)
 
 
-@st.cache_data(ttl=90)
+@st.cache_data(ttl=300)
 def _cached_load_sheet(spreadsheet_id: str, sheet_name: str, header_row: int):
-    """시트 읽기 결과를 90초 캐시하여 API 429(Quota exceeded) 완화."""
     if not spreadsheet_id or not str(spreadsheet_id).strip():
         return None
     try:
@@ -156,7 +155,7 @@ BRAND_CODE_MAP = {
     "eb": "에블린",
     "hp": "슈펜",
     "cv": "클라비스",
-    "nk": "뉴발란스키즈",
+    "nk": "뉴발란스키즈"
 }
 # 브랜드별 촬영·등록 여부 시트 (해당 시트에서만 읽어서 merge)
 BRAND_TO_SHEET = {
@@ -167,7 +166,8 @@ BRAND_TO_SHEET = {
     "후아유": "WH",
     "슈펜": "HP",  
     "에블린": "EB", 
-    "뉴발란스키즈": "NK"
+    "뉴발란스키즈": "NK",
+    "뉴발란스": "NB"
 }
 
 def _normalize_style_code_for_merge(val):
@@ -342,37 +342,9 @@ def _find_photo_date_column(df, preferred_name=None):
         raw = str(c)
         if "리터칭" in raw or "retouch" in raw.lower():
             return c
-    # 2순위: 업로드완료일 (클라비스 등 해당 시트에서 사용)
-    for c in df.columns:
-        raw = str(c)
-        if "업로드완료일" in raw or _normalize_col_name(c) == "업로드완료일":
-            return c
-    # 3순위: 머릿글 "리터칭완료일" 정확히 (공백/제어문자만 정규화)
+    # 2순위: 머릿글 "리터칭완료일" 정확히 (공백/제어문자만 정규화)
     for c in df.columns:
         if _normalize_col_name(c) == "리터칭완료일":
-            return c
-    # 4순위: 리터칭 관련 (정규화 후 포함 여부)
-    for c in df.columns:
-        s_nospace = _normalize_col_name(c)
-        if "리터칭" in s_nospace:
-            return c
-    # 5순위: 촬영일자, 포토촬영일, 보정완료일 등
-    for c in df.columns:
-        s = str(c).strip()
-        s_nospace = _normalize_col_name(c)
-        s_lower = s.lower()
-        if (
-            "포토촬영" in s_nospace
-            or "촬영일" in s_nospace
-            or "촬영일자" in s_nospace
-            or "보정완료" in s_nospace
-            or s in ("photoShotDate", "shotDate", "retouchDoneDate", "retouch_date", "촬영일자", "촬영 일자")
-        ):
-            return c
-    # 6순위: 'OO완료일' 형태 중 등록/판매 제외
-    for c in df.columns:
-        s_nospace = _normalize_col_name(c)
-        if "완료일" in s_nospace and "등록" not in s_nospace and "판매" not in s_nospace:
             return c
     return None
 
@@ -653,15 +625,13 @@ if gs_client and spreadsheet_ids and "styleCode" in items_df.columns and "brand"
             shot_col = _find_photo_date_column(b_df, preferred_name=preferred_shot_date_col)
             if shot_col and shot_col in b_df.columns:
                 # 클라비스는 업로드완료일 값 존재 여부만 체크
-                if brand_name == "클라비스":
-                    s = b_df[shot_col].astype(str).str.strip()
-                    # 값이 비어있지 않으면 촬영 완료
-                    b_df["__shot_done"] = (
-                        ~s.isin(["", "0", "0.0", "-", ".", "1900-01-00"])
-                    ).astype(int)
-                else:
-                    # 다른 브랜드는 기존 날짜 파싱 로직 유지
+                if shot_col and shot_col in b_df.columns:
                     b_df["__shot_done"] = _date_cell_to_01(b_df[shot_col])
+                    if shot_date_column is None:
+                        shot_date_column = f"{sheet_key} 시트 · {shot_col}"
+                else:
+                    b_df["__shot_done"] = 0
+            
                 if shot_date_column is None:
                     shot_date_column = f"{sheet_key} 시트 · {shot_col}"
             else:
