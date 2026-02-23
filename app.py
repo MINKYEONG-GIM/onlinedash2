@@ -293,20 +293,37 @@ def fill_missing_required_columns(df, required_columns):
     return df
 
 # ----------------------------
-# 상태 판정 로직
+# 단계상태 판정 (단일 컬럼, flow와 무관)
+# - 가장 앞 단계에서 멈춘 곳 하나만 표시
 # ----------------------------
-def get_verdict(inbound, outbound, is_shot, is_registered, is_on_sale):
-    if inbound > 0 and outbound == 0:
-        return "입고"
-    if outbound > 0 and is_shot == 0:
-        return "출고"
-    if is_shot == 1 and is_registered == 0:
-        return "촬영"
-    if is_registered == 1 and is_on_sale == 0:
-        return "등록"
-    if is_on_sale == 1:
-        return "판매개시"
-    return "대기"
+def compute_status(row):
+    if row["inboundQty"] == 0:
+        return "미입고"
+    if row["outboundQty"] == 0:
+        return "미출고"
+    if row["__shot_done"] == 0:
+        return "미촬영"
+    if row["isRegistered"] == 0:
+        return "미등록"
+    return "판매개시"
+
+
+# 기본 화면 정렬 순서
+BASE_SORT_ORDER = {
+    "미입고": 0,
+    "미출고": 1,
+    "미촬영": 2,
+    "미등록": 3,
+    "판매개시": 4,
+}
+
+# 버튼 클릭 시: 해당 단계가 안 된 스타일을 제일 위로
+FLOW_SORT_ORDER = {
+    "입고": ["미입고", "미출고", "미촬영", "미등록", "판매개시"],
+    "출고": ["미출고", "미입고", "미촬영", "미등록", "판매개시"],
+    "촬영": ["미촬영", "미입고", "미출고", "미등록", "판매개시"],
+    "등록": ["미등록", "미입고", "미출고", "미촬영", "판매개시"],
+}
 
 # ----------------------------
 # 촬영 완료 판정: 리터칭완료일·업로드완료일 등 날짜 컬럼
@@ -663,18 +680,9 @@ if gs_client and spreadsheet_ids and "styleCode" in items_df.columns and "brand"
         items_df.drop(columns=["_styleCode"], inplace=True, errors="ignore")
 
 # ----------------------------
-# verdict 생성
+# 단계상태 생성 (모든 스타일코드는 하나의 상태만 가짐)
 # ----------------------------
-items_df["verdict"] = items_df.apply(
-    lambda r: get_verdict(
-        r["inboundQty"],
-        r["outboundQty"],
-        r["__shot_done"],
-        r["isRegistered"],
-        r["isOnSale"],
-    ),
-    axis=1,
-)
+items_df["단계상태"] = items_df.apply(compute_status, axis=1)
 
 # 연도·시즌: 스타일코드 5번째(연도)·6번째(시즌) 자리로 파악. 예: sp23g1fh28 → 2026년, 1시즌 → 20261 시즌 상품
 items_df["_year"] = items_df["styleCode"].apply(year_from_style_code)
@@ -729,7 +737,7 @@ else:
 if search:
     filtered_df = filtered_df[
         filtered_df["styleCode"].astype(str).str.contains(search, case=False, na=False)
-        | filtered_df["verdict"].str.contains(search, case=False, na=False)
+        | filtered_df["단계상태"].astype(str).str.contains(search, case=False, na=False)
     ]
 
 # 발주 스타일 수(고유 styleCode), 입고/출고 등은 스타일 수로 집계
@@ -819,48 +827,16 @@ if len(flow_df) > 0:
         agg_dict["colorName"] = lambda s: " / ".join(s.dropna().astype(str).unique()[:5])
     flow_df = flow_df.groupby(group_cols, dropna=False).agg(agg_dict).reset_index()
 
-flow_df["verdict"] = selected_flow
+flow_df["단계상태"] = flow_df.apply(compute_status, axis=1)
+flow_df["상태"] = flow_df["단계상태"]
 
-# 상태 열: 선택된 flow에 따라 입고/미입고, 출고/미출고 등
-def make_status_column(df, flow):
-    if flow == "입고":
-        return df["inboundQty"].apply(lambda x: "입고" if (pd.notna(x) and float(x) > 0) else "미입고")
-    if flow == "출고":
-        return df["outboundQty"].apply(lambda x: "출고" if (pd.notna(x) and float(x) > 0) else "미출고")
-    if flow == "촬영":
-        return df["__shot_done"].apply(lambda x: "촬영" if (pd.notna(x) and int(x) == 1) else "미촬영")
-    if flow == "등록":
-        return df["isRegistered"].apply(lambda x: "등록" if (pd.notna(x) and int(x) == 1) else "미등록")
-    if flow == "판매개시":
-        return df.apply(
-            lambda r: "판매중"
-            if (
-                (pd.to_numeric(r.get("salesQty"), errors="coerce") or 0) > 0
-                or (pd.notna(r.get("isOnSale")) and int(r.get("isOnSale", 0)) == 1)
-            )
-            else "판매대기",
-            axis=1,
-        )
-    return pd.Series("", index=df.index)
-
-flow_df["상태"] = make_status_column(flow_df, selected_flow)
-
-# 정렬: 미입고/미출고/미촬영 등이 위로, 그 다음 해당 flow 충족
-if selected_flow == "입고":
-    flow_df["_정렬키"] = flow_df["inboundQty"].apply(lambda x: 0 if (pd.isna(x) or float(x) == 0) else 1)
-elif selected_flow == "출고":
-    flow_df["_정렬키"] = flow_df["outboundQty"].apply(lambda x: 0 if (pd.isna(x) or float(x) == 0) else 1)
-elif selected_flow == "촬영":
-    flow_df["_정렬키"] = flow_df["__shot_done"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
-elif selected_flow == "등록":
-    flow_df["_정렬키"] = flow_df["isRegistered"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
-elif selected_flow == "판매개시":
-    flow_df["_정렬키"] = flow_df.apply(
-        lambda r: 0 if (pd.isna(r.get("salesQty")) or (pd.to_numeric(r.get("salesQty"), errors="coerce") or 0) == 0) else 1,
-        axis=1,
-    )
-else:
-    flow_df["_정렬키"] = 0
+# 버튼별 정렬: 해당 단계가 안 된 스타일을 먼저
+order_list = FLOW_SORT_ORDER.get(
+    selected_flow,
+    list(BASE_SORT_ORDER.keys()),
+)
+order_map = {status: idx for idx, status in enumerate(order_list)}
+flow_df["_정렬키"] = flow_df["단계상태"].map(order_map).fillna(99)
 flow_df = flow_df.sort_values(by=["_정렬키", "styleCode"], ascending=[True, True])
 
 # 표시용 컬럼: 촬영 O/X, 등록 O/X (판매 열 제거)
