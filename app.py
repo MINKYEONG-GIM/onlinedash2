@@ -884,25 +884,20 @@ st.download_button(
 
 import pandas as pd
 
-# 예시: 미쏘 데이터만 df로 불러왔다는 가정
-# df = pd.read_excel("misso_data.xlsx") 등
+# 예시 데이터
+data = {
+    "스타일코드": ["MIABGG101G"],
+    "공홈 등록일": ["2025-11-17"]  # 실제 값
+}
+df = pd.DataFrame(data)
 
-# 1. 날짜 컬럼 확인 및 변환
-date_cols = ["최초출고일", "포토인계일", "포토촬영일", "리터칭완료일", "공홈 등록일"]
-for col in date_cols:
-    df[col + "_dt"] = pd.to_datetime(df[col], errors="coerce")  # 변환 안 되면 NaT 처리
+# 원본 타입 확인
+df["공홈 등록일 타입"] = df["공홈 등록일"].apply(lambda x: type(x))
+print("원본 타입 확인:")
+print(df[["스타일코드", "공홈 등록일", "공홈 등록일 타입"]])
 
-# 2. 상태 계산
-df["입고상태"] = df["최초출고일_dt"].notna()
-df["출고상태"] = df["포토인계일_dt"].notna()
-df["촬영상태"] = df["포토촬영일_dt"].notna() | df["리터칭완료일_dt"].notna()
-df["등록상태"] = df["공홈 등록일_dt"].notna()
-
-# 3. 상태별 개수 확인
-status_counts = df[["스타일코드", "입고상태", "출고상태", "촬영상태", "등록상태"]]
-print(status_counts)
-
-# 4. 등록이 안 된 스타일만 따로 보기
-unregistered = df[df["등록상태"] == False][["스타일코드", "공홈 등록일", "공홈 등록일_dt"]]
-print("등록 안 된 스타일코드:\n", unregistered)
-
+# datetime으로 변환 시도
+df["공홈 등록일_dt"] = pd.to_datetime(df["공홈 등록일"], errors="coerce")
+df["등록일 변환 성공 여부"] = df["공홈 등록일_dt"].notna()
+print("\n변환 후 확인:")
+print(df[["스타일코드", "공홈 등록일_dt", "등록일 변환 성공 여부"]])
