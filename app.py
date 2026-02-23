@@ -914,4 +914,4 @@ if "styleCode" in items_df.columns and "isRegistered" in items_df.columns:
         print(f"파싱 결과: {parsed_val} (type: {type(parsed_val)})")
         print(f"isRegistered 값: {row.iloc[0]['isRegistered']}")
     else:
-        print(f"{style_to_check} 해당하는 행 없음")} 해당하는 행 없음")
+        print(f"{style_to_check} 해당하는 행 없음")
