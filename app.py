@@ -5,7 +5,7 @@ import unicodedata
 
 
 
-st.set_page_config(page_title="(브랜드 상세) 상품흐름 대시보드", layout="wide")
+st.set_page_config(page_title="(테스트) 대시보드", layout="wide")
 
 # ----------------------------
 # Google Sheets 연동
