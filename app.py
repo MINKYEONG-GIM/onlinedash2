@@ -901,3 +901,19 @@ df["공홈 등록일_dt"] = pd.to_datetime(df["공홈 등록일"], errors="coerc
 df["등록일 변환 성공 여부"] = df["공홈 등록일_dt"].notna()
 print("\n변환 후 확인:")
 print(df[["스타일코드", "공홈 등록일_dt", "등록일 변환 성공 여부"]])
+
+
+
+# 특정 스타일코드 확인
+style_to_check = "MIABGG101G"
+if "styleCode" in items_df.columns and "isRegistered" in items_df.columns:
+    row = items_df[items_df["styleCode"] == style_to_check]
+    if not row.empty:
+        raw_val = row.iloc[0]["공홈 등록일"] if "공홈 등록일" in row.columns else None
+        parsed_val = _parse_date_series(pd.Series([raw_val])).iloc[0] if raw_val is not None else None
+        print(f"스타일코드: {style_to_check}")
+        print(f"원본 등록일 값: {raw_val} (type: {type(raw_val)})")
+        print(f"파싱 결과: {parsed_val} (type: {type(parsed_val)})")
+        print(f"isRegistered 값: {row.iloc[0]['isRegistered']}")
+    else:
+        print(f"{style_to_check} 해당하는 행 없음")
