@@ -801,7 +801,7 @@ flow_counts = pd.Series({
 if "selected_flow" not in st.session_state:
     st.session_state.selected_flow = flow_types[0]
 
-cols = st.columns(len(flow_types) + 1)
+cols = st.columns(len(flow_types))
 for i, flow in enumerate(flow_types):
     is_selected = st.session_state.selected_flow == flow
     count = int(flow_counts.get(flow, 0))
@@ -821,22 +821,13 @@ for i, flow in enumerate(flow_types):
                 st.session_state.selected_flow = flow
                 st.rerun()
 
-with cols[-1]:
-    view_mode = st.radio(
-        "보기 단위",
-        ["스타일", "단품"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="view_mode",
-    )
-
 selected_flow = st.session_state.selected_flow
 
 # 상세 테이블: 필터된 전체 스타일 사용 (선택한 flow 조건으로만 자르지 않음)
 flow_df = filtered_df.copy()
 
 # 스타일 단위: styleCode 기준 집계 (수량 합산, 촬영/등록/판매개시는 하나라도 1이면 1)
-if view_mode == "스타일" and len(flow_df) > 0:
+if len(flow_df) > 0:
     group_cols = ["brand", "yearSeason", "styleCode"]
     agg_dict = {
         "inboundQty": "sum",
