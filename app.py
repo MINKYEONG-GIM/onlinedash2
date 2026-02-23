@@ -817,7 +817,9 @@ for i, flow in enumerate(flow_types):
             use_container_width=True,
             key=f"flow_{flow}",
         ):
-            st.session_state.selected_flow = flow
+            if st.session_state.selected_flow != flow:
+                st.session_state.selected_flow = flow
+                st.rerun()
 
 with cols[-1]:
     view_mode = st.radio(
