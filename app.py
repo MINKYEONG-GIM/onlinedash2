@@ -801,21 +801,25 @@ flow_counts = pd.Series({
 if "selected_flow" not in st.session_state:
     st.session_state.selected_flow = flow_types[0]
 
-card_cols = st.columns(len(flow_types) + 1)
+cols = st.columns(len(flow_types) + 1)
 for i, flow in enumerate(flow_types):
+    is_selected = st.session_state.selected_flow == flow
     count = int(flow_counts.get(flow, 0))
     delta_val = deltas.get(flow, 0) if deltas else None
     delta_str = f"▲{delta_val}" if (delta_val is not None and delta_val > 0) else (str(delta_val) if delta_val is not None else "")
-    with card_cols[i]:
+    with cols[i]:
         btn_label = f"{flow}\n{count}/{total_n}"
         if delta_str:
             btn_label += f"  {delta_str}"
-        if st.button(btn_label, key=f"flow_btn_{flow}", use_container_width=True):
+        if st.button(
+            btn_label,
+            type="primary" if is_selected else "secondary",
+            use_container_width=True,
+            key=f"flow_{flow}",
+        ):
             st.session_state.selected_flow = flow
-        if st.session_state.selected_flow == flow:
-            st.caption("✓ 선택됨")
 
-with card_cols[-1]:
+with cols[-1]:
     view_mode = st.radio(
         "보기 단위",
         ["스타일", "단품"],
@@ -826,7 +830,8 @@ with card_cols[-1]:
 
 selected_flow = st.session_state.selected_flow
 
-flow_df = filtered_df.loc[_flow_conditions[selected_flow]].copy()
+# 상세 테이블: 필터된 전체 스타일 사용 (선택한 flow 조건으로만 자르지 않음)
+flow_df = filtered_df.copy()
 
 # 스타일 단위: styleCode 기준 집계 (수량 합산, 촬영/등록/판매개시는 하나라도 1이면 1)
 if view_mode == "스타일" and len(flow_df) > 0:
@@ -849,22 +854,49 @@ if view_mode == "스타일" and len(flow_df) > 0:
 
 flow_df["verdict"] = selected_flow
 
-# 표시용 컬럼: 촬영 O/X, 등록 O/X, 판매 상태
-flow_df["_촬영"] = flow_df["__shot_done"].map(lambda x: "O" if int(x) == 1 else "X")
-flow_df["_등록"] = flow_df["isRegistered"].map(lambda x: "O" if x == 1 else "X")
-flow_df["_판매"] = flow_df.apply(
-    lambda r: "판매개시" if r["isOnSale"] == 1 else ("출고전" if r["outboundQty"] == 0 else "출고"),
-    axis=1,
-)
+# 상태 열: 선택된 flow에 따라 입고/미입고, 출고/미출고 등
+def make_status_column(df, flow):
+    if flow == "입고":
+        return df["inboundQty"].apply(lambda x: "입고" if (pd.notna(x) and float(x) > 0) else "미입고")
+    if flow == "출고":
+        return df["outboundQty"].apply(lambda x: "출고" if (pd.notna(x) and float(x) > 0) else "미출고")
+    if flow == "촬영":
+        return df["__shot_done"].apply(lambda x: "촬영" if (pd.notna(x) and int(x) == 1) else "미촬영")
+    if flow == "등록":
+        return df["isRegistered"].apply(lambda x: "등록" if (pd.notna(x) and int(x) == 1) else "미등록")
+    if flow == "판매개시":
+        return df["isOnSale"].apply(lambda x: "판매중" if (pd.notna(x) and int(x) == 1) else "판매대기")
+    return pd.Series("", index=df.index)
+
+flow_df["상태"] = make_status_column(flow_df, selected_flow)
+
+# 정렬: 미입고/미출고/미촬영 등이 위로, 그 다음 해당 flow 충족
+if selected_flow == "입고":
+    flow_df["_정렬키"] = flow_df["inboundQty"].apply(lambda x: 0 if (pd.isna(x) or float(x) == 0) else 1)
+elif selected_flow == "출고":
+    flow_df["_정렬키"] = flow_df["outboundQty"].apply(lambda x: 0 if (pd.isna(x) or float(x) == 0) else 1)
+elif selected_flow == "촬영":
+    flow_df["_정렬키"] = flow_df["__shot_done"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
+elif selected_flow == "등록":
+    flow_df["_정렬키"] = flow_df["isRegistered"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
+elif selected_flow == "판매개시":
+    flow_df["_정렬키"] = flow_df["isOnSale"].apply(lambda x: 0 if (pd.isna(x) or int(x) == 0) else 1)
+else:
+    flow_df["_정렬키"] = 0
+flow_df = flow_df.sort_values(by=["_정렬키", "styleCode"], ascending=[True, True])
+
+# 표시용 컬럼: 촬영 O/X, 등록 O/X (판매 열 제거)
+flow_df["_촬영"] = flow_df["__shot_done"].map(lambda x: "O" if (pd.notna(x) and int(x) == 1) else "X")
+flow_df["_등록"] = flow_df["isRegistered"].map(lambda x: "O" if (pd.notna(x) and x == 1) else "X")
 
 # ----------------------------
-# 상세 테이블 (NO, 스타일코드, 상품명, 컬러, 입고/출고/재고/판매량, 촬영, 등록, 판매)
+# 상세 테이블 (NO, 스타일코드, 상품명, 컬러, 입고/출고/재고, 촬영, 등록, 상태) — 판매 열 제거
 # ----------------------------
 st.subheader(f"상세 현황 · {selected_flow}")
 
 display_df = flow_df.copy()
 display_df.insert(0, "NO", range(1, len(display_df) + 1))
-show_cols = ["NO", "styleCode", "productName", "colorName", "inboundQty", "outboundQty", "stockQty", "salesQty", "_촬영", "_등록", "_판매"]
+show_cols = ["NO", "styleCode", "productName", "colorName", "inboundQty", "outboundQty", "stockQty", "_촬영", "_등록", "상태"]
 show_cols = [c for c in show_cols if c in display_df.columns]
 display_df = display_df[show_cols]
 display_df = display_df.rename(columns={
@@ -874,10 +906,8 @@ display_df = display_df.rename(columns={
     "inboundQty": "입고량",
     "outboundQty": "출고량",
     "stockQty": "재고량",
-    "salesQty": "판매량",
     "_촬영": "촬영",
     "_등록": "등록",
-    "_판매": "판매",
 })
 
 st.dataframe(display_df, use_container_width=True, hide_index=True)
