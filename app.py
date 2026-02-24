@@ -764,9 +764,9 @@ except Exception:
 
 
 
-mixxo_registered_styles = (
+misso_registered_styles = (
     df_style_all[
-        (df_style_all["brand"] == "MI")
+        (df_style_all["브랜드"] == "미쏘")
         & (df_style_all["온라인상품등록여부"] == "등록")
     ]["스타일코드"]
     .dropna()
@@ -774,5 +774,5 @@ mixxo_registered_styles = (
     .sort_values()
 )
 
-print("미쏘 등록완료 스타일코드 개수:", len(mixxo_registered_styles))
+print("미쏘 등록완료 스타일코드 개수:", len(misso_registered_styles))
 misso_registered_styles
