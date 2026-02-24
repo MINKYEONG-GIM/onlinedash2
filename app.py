@@ -920,3 +920,19 @@ if "styleCode" in items_df.columns and "isRegistered" in items_df.columns:
         st.write(f"isRegistered 값: {row.iloc[0]['isRegistered']}")
     else:
         st.write(f"{style_to_check} 해당하는 행 없음")
+
+
+
+
+misso_registered_styles = (
+    df_style_all[
+        (df_style_all["brand"] == "미쏘")
+        & (df_style_all["온라인상품등록여부"] == "등록")
+    ]["스타일코드"]
+    .dropna()
+    .drop_duplicates()
+    .sort_values()
+)
+
+print("미쏘 등록완료 스타일코드 개수:", len(misso_registered_styles))
+misso_registered_styles
