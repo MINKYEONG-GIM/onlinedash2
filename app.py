@@ -507,11 +507,15 @@ with col_head_right:
     with col_yr:
         st.markdown('<div style="font-size:0.875rem;color:#f1f5f9;margin-bottom:0.25rem;">연도</div>', unsafe_allow_html=True)
         st.markdown('<div style="font-weight:600;color:#f8fafc;">2026년</div>', unsafe_allow_html=True)
+    
     with col_season:
         seasons = ["1", "2", "A", "S", "F"]
-        selected_seasons = st.multiselect("시즌", seasons, default=["2"], key="season_filter")
+        selected_seasons = st.multiselect("시즌", seasons, default=seasons, key="season_filter")
+
     with col_brand:
-        selected_brand = st.selectbox("브랜드", ["브랜드 전체"] + brands_list, key="brand_filter", index=0)
+        brands_list = ["스파오", "미쏘", "후아유", "로엠", "뉴발란스", "뉴발란스키즈", "슈펜", "에블린", "클라비스"]
+        selected_brand = st.selectbox("브랜드", brands_list, index=brands_list.index("미쏘"), key="brand_filter")
+    
 
 def _season_matches(season_series, selected_list):
     if not selected_list:
@@ -760,19 +764,3 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
-
-
-
-
-misso_registered_styles = (
-    df_style_all[
-        (df_style_all["브랜드"] == "미쏘")
-        & (df_style_all["온라인상품등록여부"] == "등록")
-    ]["스타일코드"]
-    .dropna()
-    .drop_duplicates()
-    .sort_values()
-)
-
-print("미쏘 등록완료 스타일코드 개수:", len(misso_registered_styles))
-misso_registered_styles
