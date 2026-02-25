@@ -764,3 +764,26 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
+
+
+# 1️⃣ 미쏘 + 입고 완료 + 온라인 등록된 스타일만 필터
+mixxo_registered_df = df_style_all[
+    (df_style_all["브랜드"] == "미쏘") &
+    (df_style_all["입고 여부"] == "Y") &
+    (df_style_all["온라인상품등록여부"] == "등록")
+]
+
+# 2️⃣ 스타일코드만 추출 (중복 제거 + 정렬)
+mixxo_registered_styles = (
+    mixxo_registered_df["스타일코드"]
+    .dropna()
+    .drop_duplicates()
+    .sort_values()
+    .reset_index(drop=True)
+)
+
+# 3️⃣ 개수 확인
+print("미쏘 온라인등록 스타일 수 (대시보드 기준):", len(mixxo_registered_styles))
+
+# 4️⃣ 리스트 확인
+mixxo_registered_styles
