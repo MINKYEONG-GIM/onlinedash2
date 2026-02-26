@@ -305,6 +305,20 @@ def load_brand_register_df(io_bytes=None, _cache_key=None, target_sheet_name=Non
             continue
         data = df_raw.iloc[header_row_idx + 1:].copy()
         data.columns = range(data.shape[1])
+        # 날짜 컬럼 파싱
+        reg_dt = _parse_date_series(data.iloc[:, regdate_col])
+        
+        photo_dt = (
+            _parse_date_series(data.iloc[:, photo_handover_col])
+            if photo_handover_col is not None and photo_handover_col < data.shape[1]
+            else pd.Series(pd.NaT, index=data.index)
+        )
+        
+        retouch_dt = (
+            _parse_date_series(data.iloc[:, retouch_done_col])
+            if retouch_done_col is not None and retouch_done_col < data.shape[1]
+            else pd.Series(pd.NaT, index=data.index)
+        )
         out = pd.DataFrame()
         out["스타일코드"] = data.iloc[:, style_col].astype(str).str.strip()
         out["시즌"] = data.iloc[:, season_col].astype(str).str.strip() if season_col is not None and season_col < data.shape[1] else ""
