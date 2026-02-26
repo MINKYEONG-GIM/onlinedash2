@@ -230,7 +230,7 @@ def load_base_inout(io_bytes=None, _cache_key=None):
         score = sum(1 for cell in row if any(k in cell for k in kw))
         if score > best_score:
             best_score, best_row = score, i
-    df = pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=best_row if (best_row is not None and best_score > 0) else 0)
+    pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=best_row if (best_row is not None and best_score > 0) else 0)
     df.columns = [str(c).strip() for c in df.columns]
     style_col = find_col(["스타일코드", "스타일"], df=df)
     if style_col and style_col in df.columns:
@@ -242,21 +242,21 @@ def load_base_inout(io_bytes=None, _cache_key=None):
 
 @st.cache_data(ttl=1)
 def _base_style_to_first_in_map(io_bytes=None, _cache_key=None):
-    df = load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
+    load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
     if df.empty:
         return {}
     style_col = find_col(["스타일코드", "스타일"], df=df)
     first_col = find_col(["최초입고일", "입고일"], df=df)
     if not style_col or not first_col:
         return {}
-    df = df.copy()
+    df.copy()
     df["_style"] = df[style_col].astype(str).str.strip().str.replace(" ", "", regex=False)
     numeric = pd.to_numeric(df[first_col], errors="coerce")
     excel_mask = numeric.between(1, 60000, inclusive="both")
     df["_first_in"] = pd.to_datetime(df[first_col], errors="coerce")
     if excel_mask.any():
         df.loc[excel_mask, "_first_in"] = pd.to_datetime(numeric[excel_mask], unit="d", origin="1899-12-30", errors="coerce")
-    df = df[df["_first_in"].notna() & (df["_style"].str.len() > 0)]
+    df[df["_first_in"].notna() & (df["_style"].str.len() > 0)]
     return df.groupby("_style")["_first_in"].min().to_dict() if not df.empty else {}
 
 def _norm_season(val):
@@ -478,7 +478,7 @@ def build_style_table_all(sources):
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 def build_inout_aggregates(io_bytes):
-    df = load_base_inout(io_bytes, _cache_key="base")
+    load_base_inout(io_bytes, _cache_key="base")
     if df.empty:
         return [], {}, pd.DataFrame()
     style_col = find_col(["스타일코드", "스타일"], df=df)
@@ -613,7 +613,7 @@ if selected_seasons and set(selected_seasons) != set(seasons):
 if selected_brand and selected_brand != "브랜드 전체":
     df_style = df_style[df_style["브랜드"] == selected_brand]
 
-inout_rows, inout_agg, brand_season_df = build_inout_aggregates(base_bytes)
+inout_rows, inout_agg, brand_season_build_inout_aggregates(base_bytes)
 df_base = load_base_inout(base_bytes, _cache_key="base")
 if selected_brand and selected_brand != "브랜드 전체" and "브랜드" in df_base.columns:
     df_base = df_base[df_base["브랜드"].astype(str).str.strip() == selected_brand].copy()
@@ -682,7 +682,7 @@ if selected_seasons and set(selected_seasons) != set(seasons):
 df_style_unique = df_for_table.drop_duplicates(subset=["브랜드", "시즌", "스타일코드"])
 df_in = df_style_unique[df_style_unique["입고 여부"] == "Y"]
 all_brands = sorted(df_style_all["브랜드"].unique())
-table_df = pd.DataFrame({"브랜드": all_brands})
+table_pd.DataFrame({"브랜드": all_brands})
 table_df["입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["입고스타일수"].replace(0, 1)).round(2)
@@ -712,9 +712,9 @@ for b in NO_REG_SHEET_BRANDS:
         table_df.loc[table_df["브랜드"] == b, "온라인등록율"] = -1.0
 
 bu_labels = {label for label, _ in bu_groups}
-monitor_df = table_df.copy()
+monitor_table_df.copy()
 monitor_df["_등록율"] = monitor_df.apply(lambda r: "-" if r["브랜드"] in NO_REG_SHEET_BRANDS else str(int(r["온라인등록율"] * 100) if r["온라인등록율"] >= 0 else 0) + "%", axis=1)
-monitor_df = monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
+monitor_monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
 
 TOOLTIP_RATE = "(초록불) 90% 초과&#10;(노란불) 80% 초과&#10;(빨간불) 80% 이하"
 TOOLTIP_AVG = "(초록불) 3일 이하&#10;(노란불) 5일 이하&#10;(빨간불) 5일 초과"
@@ -819,7 +819,7 @@ def _fmt_eok_table(v):
     except Exception:
         return "0 억 원"
 def _get_season_rows(brand):
-    df = brand_season_df[brand_season_df["브랜드"] == brand].sort_values("시즌")
+    brand_season_df[brand_season_df["브랜드"] == brand].sort_values("시즌")
     if df.empty:
         return []
     rows = []
@@ -848,7 +848,7 @@ def _build_inout_table_html(display_df):
 st.markdown('<div style="height:40px;"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">(온/오프 전체) 입출고 현황</div>', unsafe_allow_html=True)
 st.markdown('<div style="font-size:1.1rem;color:#cbd5e1;margin-bottom:0.5rem;">STY 기준 통계</div>', unsafe_allow_html=True)
-display_df = pd.DataFrame(inout_rows)[["브랜드"] + TABLE_COLS]
+display_pd.DataFrame(inout_rows)[["브랜드"] + TABLE_COLS]
 st.markdown('<div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:0.5rem;">브랜드명을 클릭하면 시즌별 수치를 보실 수 있습니다</div>', unsafe_allow_html=True)
 try:
     import streamlit.components.v1 as components
