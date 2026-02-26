@@ -230,8 +230,8 @@ def load_base_inout(io_bytes=None, _cache_key=None):
         score = sum(1 for cell in row if any(k in cell for k in kw))
         if score > best_score:
             best_score, best_row = score, i
-    pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=best_row if (best_row is not None and best_score > 0) else 0)
-    df_raw.columns = [str(c).strip() for c in df_raw.columns]
+    df = pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=best_row if (best_row is not None and best_score > 0) else 0)
+    df.columns = [str(c).strip() for c in df.columns]
     style_col = find_col(["스타일코드", "스타일"], df=df)
     if style_col and style_col in df.columns:
         prefix = df[style_col].astype(str).str.strip().str.lower().str.slice(0, 2)
