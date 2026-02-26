@@ -9,33 +9,74 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 from google.oauth2.service_account import Credentials
+from streamlit_cookies_manager import EncryptedCookieManager
 
 st.set_page_config(page_title="전 브랜드 스타일 모니터링", layout="wide", initial_sidebar_state="expanded")
+
+
+cookies = EncryptedCookieManager(
+    prefix="style_dashboard",
+    password="very-secret-password"  # 아무 문자열 가능
+)
+
+if not cookies.ready():
+    st.stop()
 
 # ---- 비밀번호 인증 (처음 접속 시) ----
 def _get_expected_password():
     return _secret("DASHBOARD_PASSWORD") or os.environ.get("DASHBOARD_PASSWORD", "").strip()
 
+
+
 def _check_auth():
+    # 1. 세션 초기화
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
+
     expected = _get_expected_password()
     if not expected:
         st.session_state.authenticated = True
         return
+
+    # 2. 쿠키에 로그인 기록 있으면 자동 통과
+    if cookies.get("logged_in") == "true":
+        st.session_state.authenticated = True
+        return
+
+    # 3. 이미 인증된 경우
     if st.session_state.authenticated:
         return
-    st.markdown("<div style='max-width:400px;margin:4rem auto;padding:2rem;background:#1e293b;border-radius:12px;border:1px solid #334155;'>", unsafe_allow_html=True)
+
+    # 4. 로그인 UI
+    st.markdown(
+        "<div style='max-width:400px;margin:4rem auto;padding:2rem;"
+        "background:#1e293b;border-radius:12px;border:1px solid #334155;'>",
+        unsafe_allow_html=True
+    )
     st.markdown("### 🔐 비밀번호를 입력하세요")
-    pw = st.text_input("비밀번호", type="password", key="auth_password", placeholder="비밀번호 입력")
+
+    pw = st.text_input(
+        "비밀번호",
+        type="password",
+        key="auth_password",
+        placeholder="비밀번호 입력"
+    )
+
     if st.button("입장", key="auth_submit"):
         if pw.strip() == expected:
             st.session_state.authenticated = True
+
+            # ✅ 쿠키 저장
+            cookies["logged_in"] = "true"
+            cookies.save()
+
             st.rerun()
         else:
-            st.error("비밀번호가 올바르지 않습니다 문의가 있으시면 kim_minkyeong07@eland.co.kr로 부탁드립니다")
+            st.error("비밀번호가 올바르지 않습니다")
+
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
+
 
 # ---- 설정 ----
 def _secret(key, default=""):
@@ -45,12 +86,12 @@ def _secret(key, default=""):
     except Exception:
         return default
 
-_SPREADSHEET_KEYS = [
-    ("inout", "BASE_SPREADSHEET_ID"), ("spao", "SP_SPREADSHEET_ID"), ("whoau", "WH_SPREADSHEET_ID"),
-    ("clavis", "CV_SPREADSHEET_ID"), ("mixxo", "MI_SPREADSHEET_ID"), ("roem", "RM_SPREADSHEET_ID"),
-    ("shoopen", "HP_SPREADSHEET_ID"), ("eblin", "EB_SPREADSHEET_ID"),
-]
-GOOGLE_SPREADSHEET_IDS = {k: str(_secret(s)).strip() or "" for k, s in _SPREADSHEET_KEYS}
+# 입출고용: BASE_SPREADSHEET_ID / 온라인등록용: ONLINE_SPREADSHEET_ID 하나만 사용 (secrets에서 관리)
+BASE_SPREADSHEET_ID = str(_secret("BASE_SPREADSHEET_ID")).strip() or ""
+ONLINE_SPREADSHEET_ID = str(_secret("ONLINE_SPREADSHEET_ID")).strip() or ""
+GOOGLE_SPREADSHEET_IDS = {"inout": BASE_SPREADSHEET_ID}
+# 온라인 스프레드시트 내 워크시트 이름 = 브랜드명 (예: 스파오 시트에서 스파오 데이터)
+BRAND_KEY_TO_SHEET_NAME = {"spao": "스파오", "whoau": "후아유", "clavis": "클라비스", "mixxo": "미쏘", "roem": "로엠", "shoopen": "슈펜", "eblin": "에블린"}
 brands_list = ["스파오", "뉴발란스", "뉴발란스키즈", "후아유", "슈펜", "미쏘", "로엠", "클라비스", "에블린"]
 bu_groups = [("캐쥬얼BU", ["스파오"]), ("스포츠BU", ["뉴발란스", "뉴발란스키즈", "후아유", "슈펜"]), ("여성BU", ["미쏘", "로엠", "클라비스", "에블린"])]
 BRAND_TO_KEY = {"스파오": "spao", "후아유": "whoau", "클라비스": "clavis", "미쏘": "mixxo", "로엠": "roem", "슈펜": "shoopen", "에블린": "eblin"}
@@ -135,7 +176,11 @@ def fetch_sheet_bytes(sheet_id):
 
 @st.cache_data(ttl=300)
 def get_all_sources():
-    return {k: (fetch_sheet_bytes(GOOGLE_SPREADSHEET_IDS.get(k)), k) for k in GOOGLE_SPREADSHEET_IDS}
+    out = {"inout": (fetch_sheet_bytes(BASE_SPREADSHEET_ID), "inout")}
+    online_bytes = fetch_sheet_bytes(ONLINE_SPREADSHEET_ID) if ONLINE_SPREADSHEET_ID else None
+    for brand_key in BRAND_KEY_TO_SHEET_NAME:
+        out[brand_key] = (online_bytes, brand_key)
+    return out
 
 # ---- 컬럼/헤더 탐지 ----
 def find_col(keys, df=None):
@@ -232,14 +277,16 @@ def _norm_season(val):
 
 # ---- 브랜드 등록 시트 ----
 @st.cache_data(ttl=120)
-def load_brand_register_df(io_bytes=None, _cache_key=None):
+def load_brand_register_df(io_bytes=None, _cache_key=None, target_sheet_name=None):
     if io_bytes is None or len(io_bytes) == 0:
         return pd.DataFrame()
     try:
         excel_file = pd.ExcelFile(BytesIO(io_bytes))
     except Exception:
         return pd.DataFrame()
-    for sheet_name in excel_file.sheet_names:
+    sheet_names = ([target_sheet_name] if target_sheet_name and target_sheet_name in excel_file.sheet_names else
+                   (excel_file.sheet_names if not target_sheet_name else []))
+    for sheet_name in sheet_names:
         try:
             df_raw = pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=None)
         except Exception:
@@ -267,7 +314,7 @@ def load_brand_register_df(io_bytes=None, _cache_key=None):
     return pd.DataFrame()
 
 @st.cache_data(ttl=120)
-def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=None, _inout_cache_key=None, selected_seasons_tuple=None):
+def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=None, _inout_cache_key=None, selected_seasons_tuple=None, target_sheet_name=None):
     if not reg_bytes or len(reg_bytes) == 0:
         return None
     base_map = _base_style_to_first_in_map(inout_bytes, _inout_cache_key or "inout") if inout_bytes else {}
@@ -277,7 +324,9 @@ def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=No
         excel_file = pd.ExcelFile(BytesIO(reg_bytes))
     except Exception:
         return None
-    for sheet_name in excel_file.sheet_names:
+    sheet_names = ([target_sheet_name] if target_sheet_name and target_sheet_name in excel_file.sheet_names else
+                   (excel_file.sheet_names if not target_sheet_name else []))
+    for sheet_name in sheet_names:
         try:
             df_raw = pd.read_excel(BytesIO(reg_bytes), sheet_name=sheet_name, header=None)
         except Exception:
@@ -383,7 +432,7 @@ def build_style_table_all(sources):
         reg_status = "미등록"
         if brand_key:
             reg_bytes = sources.get(brand_key, (None, None))[0]
-            df_reg = load_brand_register_df(reg_bytes, _cache_key=brand_key)
+            df_reg = load_brand_register_df(reg_bytes, _cache_key=brand_key, target_sheet_name=BRAND_KEY_TO_SHEET_NAME.get(brand_key))
             if not df_reg.empty:
                 df_reg = df_reg.copy()
                 df_reg["스타일코드_norm"] = df_reg["스타일코드"].str.strip()
@@ -514,7 +563,7 @@ with col_head_right:
 
     with col_brand:
         brands_list = ["스파오", "미쏘", "후아유", "로엠", "뉴발란스", "뉴발란스키즈", "슈펜", "에블린", "클라비스"]
-        selected_brand = st.selectbox("브랜드", brands_list, index=brands_list.index("미쏘"), key="brand_filter")
+        selected_brand = st.selectbox("브랜드", brands_list, index=brands_list.index("후아유"), key="brand_filter")
     
 
 def _season_matches(season_series, selected_list):
@@ -594,6 +643,7 @@ for col, label, amt, sty in [(k1, "입고", total_in_amt, total_in_sty), (k2, "�
 st.markdown("<div style='margin-top:80px;'></div>", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown('<div class="section-title">(온라인) 상품등록 모니터링</div>', unsafe_allow_html=True)
+st.markdown('<div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:0.5rem;">가등록한 스타일은 등록으로 인정되지 않습니다 </div>', unsafe_allow_html=True)
 
 df_for_table = df_style_all.copy()
 if selected_seasons and set(selected_seasons) != set(seasons):
@@ -616,7 +666,7 @@ for brand_name in table_df["브랜드"].unique():
     reg_bytes = sources.get(BRAND_TO_KEY[brand_name], (None, None))[0]
     if not reg_bytes:
         continue
-    avg_days = load_brand_register_avg_days(reg_bytes, base_bytes, _cache_key=BRAND_TO_KEY[brand_name], _inout_cache_key="inout", selected_seasons_tuple=_season_tuple)
+    avg_days = load_brand_register_avg_days(reg_bytes, base_bytes, _cache_key=BRAND_TO_KEY[brand_name], _inout_cache_key="inout", selected_seasons_tuple=_season_tuple, target_sheet_name=BRAND_KEY_TO_SHEET_NAME.get(BRAND_TO_KEY[brand_name]))
     if avg_days is not None:
         table_df.loc[table_df["브랜드"] == brand_name, "평균 등록 소요일수"] = f"{avg_days:.1f}"
 for b in NO_REG_SHEET_BRANDS:
@@ -756,7 +806,7 @@ st.markdown('<div style="height:40px;"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">(온/오프 전체) 입출고 현황</div>', unsafe_allow_html=True)
 st.markdown('<div style="font-size:1.1rem;color:#cbd5e1;margin-bottom:0.5rem;">STY 기준 통계</div>', unsafe_allow_html=True)
 display_df = pd.DataFrame(inout_rows)[["브랜드"] + TABLE_COLS]
-st.caption("브랜드명을 클릭하면 시즌별 수치를 보실 수 있습니다")
+st.markdown('<div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:0.5rem;">브랜드명을 클릭하면 시즌별 수치를 보실 수 있습니다</div>', unsafe_allow_html=True)
 try:
     import streamlit.components.v1 as components
     inout_html, row_count = _build_inout_table_html(display_df)
@@ -764,26 +814,3 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
-
-
-# 1️⃣ 미쏘 + 입고 완료 + 온라인 등록된 스타일만 필터
-mixxo_registered_df = df_style_all[
-    (df_style_all["브랜드"] == "미쏘") &
-    (df_style_all["입고 여부"] == "Y") &
-    (df_style_all["온라인상품등록여부"] == "등록")
-]
-
-# 2️⃣ 스타일코드만 추출 (중복 제거 + 정렬)
-mixxo_registered_styles = (
-    mixxo_registered_df["스타일코드"]
-    .dropna()
-    .drop_duplicates()
-    .sort_values()
-    .reset_index(drop=True)
-)
-
-# 3️⃣ 개수 확인
-print("미쏘 온라인등록 스타일 수 (대시보드 기준):", len(mixxo_registered_styles))
-
-# 4️⃣ 리스트 확인
-mixxo_registered_styles
