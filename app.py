@@ -682,7 +682,7 @@ if selected_seasons and set(selected_seasons) != set(seasons):
 df_style_unique = df_for_table.drop_duplicates(subset=["브랜드", "시즌", "스타일코드"])
 df_in = df_style_unique[df_style_unique["입고 여부"] == "Y"]
 all_brands = sorted(df_style_all["브랜드"].unique())
-table_pd.DataFrame({"브랜드": all_brands})
+table_df = pd.DataFrame({"브랜드": all_brands})
 table_df["입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["입고스타일수"].replace(0, 1)).round(2)
