@@ -555,9 +555,10 @@ DARK_CSS = """<style>
 .section-title{font-size:2.2rem;font-weight:700;color:#f1f5f9;margin:1rem 0 0.5rem 0}
 .kpi-card-dark{background:#1e293b;color:#f1f5f9;border-radius:10px;padding:1rem 1.2rem;text-align:center;font-weight:600;min-height:100px;display:flex;flex-direction:column;justify-content:center;border:1px solid #334155}
 .kpi-card-dark .label{font-size:1.1rem;margin-bottom:0.3rem;color:#cbd5e1}.kpi-card-dark .value{font-size:1rem;font-weight:700;color:#f1f5f9}
-.monitor-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155}
-.monitor-table th,.monitor-table td{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}
+.monitor-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9}
+.monitor-table th,.monitor-table td{border:none;padding:6px 8px;text-align:center;font-size:0.95rem}
 .monitor-table thead th{background:#0f172a;color:#f1f5f9;font-weight:700}
+.monitor-table thead th.col-emphasis{border:5px solid #fbbf24}
 .monitor-table tr.bu-row td{background:#d9f7ee;color:#000;font-size:1.15rem;font-weight:700}
 .monitor-table .rate-help,.monitor-table .avg-help,.monitor-table .sum-help{position:relative;display:inline-block;cursor:help}
 .monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .sum-help::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}
@@ -576,7 +577,7 @@ DARK_CSS = """<style>
 .monitor-table{table-layout:fixed}
 .monitor-table th.col-small,.monitor-table td.col-small{width:90px;min-width:90px;max-width:90px;box-sizing:border-box}
 .monitor-table th.col-emphasis,.monitor-table td.col-emphasis{width:120px;min-width:120px;max-width:120px;box-sizing:border-box}
-.monitor-table thead th{border:5px solid #fbbf24}
+.monitor-table thead th.col-emphasis{border:5px solid #fbbf24}
 .table-wrap.monitor-table-wrap{max-height:500px;overflow-y:auto;overflow-x:auto;border:1px solid #334155;border-radius:8px}
 .inout-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;overflow:hidden}
 .inout-table th,.inout-table td{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}
@@ -828,9 +829,10 @@ body_monitor = "".join(("<tr class='bu-row'>" if r["브랜드"] in bu_labels els
 
 MONITOR_TABLE_HTML = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
-.monitor-table{{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155}}
-.monitor-table th,.monitor-table td{{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}}
+.monitor-table{{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9}}
+.monitor-table th,.monitor-table td{{border:none;padding:6px 8px;text-align:center;font-size:0.95rem}}
 .monitor-table thead th{{background:#0f172a;color:#f1f5f9;font-weight:700}}
+.monitor-table thead th.col-emphasis{{border:5px solid #fbbf24}}
 .monitor-table tr.bu-row td{{background:#d9f7ee;color:#000;font-size:1.15rem;font-weight:700}}
 .monitor-table th.th-sort{{white-space:nowrap;cursor:default}}
 .monitor-table th.th-sort .sort-arrow{{color:#94a3b8;text-decoration:none;margin-left:4px;font-size:0.75rem;cursor:pointer}}
@@ -849,7 +851,7 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table{{table-layout:fixed}}
 .monitor-table th.col-small,.monitor-table td.col-small{{width:90px;min-width:90px;max-width:90px;box-sizing:border-box}}
 .monitor-table th.col-emphasis,.monitor-table td.col-emphasis{{width:120px;min-width:120px;max-width:120px;box-sizing:border-box}}
-.monitor-table thead th{{border:5px solid #fbbf24}}
+.monitor-table thead th.col-emphasis{{border:5px solid #fbbf24}}
 #tooltip-follow{{position:fixed;display:none;white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:9999;pointer-events:none}}
 html,body{{height:100%;margin:0;overflow:hidden}}
 .table-wrap{{height:100%;max-height:100%;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch}}
