@@ -685,10 +685,10 @@ df_style_unique = df_for_table.drop_duplicates(subset=["브랜드", "시즌", "�
 df_in = df_style_unique[df_style_unique["입고 여부"] == "Y"]
 all_brands = sorted(df_style_all["브랜드"].unique())
 table_df = pd.DataFrame({"브랜드": all_brands})
-table_df["입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
+table_df["물류입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
-table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["입고스타일수"].replace(0, 1)).round(2)
-table_df["전체 미등록스타일"] = table_df["입고스타일수"] - table_df["온라인등록스타일수"]
+table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["물류입고스타일수"].replace(0, 1)).round(2)
+table_df["전체 미등록스타일"] = table_df["물류입고스타일수"] - table_df["온라인등록스타일수"]
 table_df["등록수"] = table_df["온라인등록스타일수"]
 table_df["평균전체등록소요일수"] = "-"
 table_df["포토인계소요일수"] = "-"
@@ -716,7 +716,7 @@ for b in NO_REG_SHEET_BRANDS:
 bu_labels = {label for label, _ in bu_groups}
 monitor_df = table_df.copy()
 monitor_df["_등록율"] = monitor_df.apply(lambda r: "-" if r["브랜드"] in NO_REG_SHEET_BRANDS else str(int(r["온라인등록율"] * 100) if r["온라인등록율"] >= 0 else 0) + "%", axis=1)
-monitor_df = monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
+monitor_df = monitor_df.sort_values("물류입고스타일수", ascending=False).reset_index(drop=True)
 
 TOOLTIP_RATE = "(초록불) 90% 초과&#10;(노란불) 80% 초과&#10;(빨간불) 80% 이하"
 TOOLTIP_AVG = "(초록불) 3일 이하&#10;(노란불) 5일 이하&#10;(빨간불) 5일 초과"
@@ -757,7 +757,7 @@ th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help" data-to
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일수</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일수</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일수</span></th>'
-header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("입고스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
+header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
     return f"{int(n):,}"
@@ -782,7 +782,7 @@ def _row_monitor(r):
 
     return (
         f"<td class='col-small'>{safe_cell(r['브랜드'])}</td>"
-        f"<td class='col-small'>{_fmt(r['입고스타일수'])}</td>"
+        f"<td class='col-small'>{_fmt(r['물류입고스타일수'])}</td>"
         f"<td class='col-small'>{reg_sty_display}</td>"
         f"<td class='col-emphasis'>{rate_cell}</td>"
         f"<td class='col-small'>{avg_photo_handover}</td>"
