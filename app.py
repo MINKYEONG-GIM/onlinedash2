@@ -773,15 +773,10 @@ def _row_monitor(r):
     avg_total = safe_cell("-") if no_reg else build_avg_days_cell(
         r.get("평균전체등록소요일수")
     )
-    avg_photo_handover = safe_cell("-") if no_reg else build_avg_days_cell(
-        r.get("포토인계소요일수")
-    )
-    avg_photo = safe_cell("-") if no_reg else build_avg_days_cell(
-        r.get("포토 소요일수")
-    )
-    avg_register = safe_cell("-") if no_reg else build_avg_days_cell(
-        r.get("상품등록소요일수")
-    )
+    # 포토인계·포토·상품등록 소요일수 셀은 값만 표시 (초록불 툴팁/색점 없음)
+    avg_photo_handover = safe_cell("-") if no_reg else safe_cell(r.get("포토인계소요일수"))
+    avg_photo = safe_cell("-") if no_reg else safe_cell(r.get("포토 소요일수"))
+    avg_register = safe_cell("-") if no_reg else safe_cell(r.get("상품등록소요일수"))
 
     return (
         f"<td>{safe_cell(r['브랜드'])}</td>"
