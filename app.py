@@ -707,7 +707,9 @@ if not df_online_in.empty:
 else:
     table_df["온라인입고스타일수"] = 0
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
-table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["물류입고스타일수"].replace(0, 1)).round(2)
+# 온라인등록율 = 브랜드별 (온라인등록스타일수 / 온라인입고스타일수), 단위 %
+denom = table_df["온라인입고스타일수"].replace(0, pd.NA)
+table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / denom).fillna(0).round(2)
 table_df["전체 미등록스타일"] = table_df["물류입고스타일수"] - table_df["온라인등록스타일수"]
 table_df["등록수"] = table_df["온라인등록스타일수"]
 table_df["평균전체등록소요일수"] = "-"
@@ -777,7 +779,8 @@ th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follo
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일</span></th>'
-header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + _th_sort("온라인상품<br>입고스타일", 2) + _th_sort("온라인등록<br>스타일수", 3) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
+th_online_in = '<th class="th-sort col-small" data-col-index="2" data-order="desc"><span class="avg-help" data-tooltip="일부 QR 등 온라인 미판매 스타일을 제외한 입고스타일수">온라인상품<br>입고스타일</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="2" title="정렬">↕</a></th>'
+header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + th_online_in + _th_sort("온라인등록<br>스타일수", 3) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
     return f"{int(n):,}"
