@@ -879,7 +879,7 @@ credentials = Credentials.from_service_account_info(
 gc = gspread.authorize(credentials)
 
 # 3. 스프레드시트 열기 (여기서 sh 생성됨)
-sh = gc.open_by_key(online_spreadsheet_id)
+sh = gc.open_by_key(ONLINE_SPREADSHEET_ID)
 
 # ===============================
 # ✅ 여기부터 추가해야 함
