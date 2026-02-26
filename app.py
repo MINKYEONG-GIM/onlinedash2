@@ -313,7 +313,7 @@ def load_brand_register_df(io_bytes=None, _cache_key=None, target_sheet_name=Non
         return out
     return pd.DataFrame()
 
-@st.cache_data(ttl=120)
+@st.cache_data(ttl=10)
 def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=None, _inout_cache_key=None, selected_seasons_tuple=None, target_sheet_name=None):
     if not reg_bytes or len(reg_bytes) == 0:
         return None
