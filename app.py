@@ -774,15 +774,42 @@ header_monitor = "<tr><th>브랜드</th>" + _th_sort("입고스타일수", 1) + 
 def _fmt(n):
     return f"{int(n):,}"
 
+
 def _row_monitor(r):
     no_reg = r["브랜드"] in NO_REG_SHEET_BRANDS
+
     reg_sty_display = "-" if no_reg else _fmt(r["온라인등록스타일수"])
-    rate_cell = safe_cell("-") if no_reg else build_rate_cell(r.get("온라인등록율"), r.get("_등록율"))
-    avg_total = safe_cell("-") if no_reg else build_avg_days_cell(r.get("평균전체등록소요일수"))
-    avg_photo_handover = safe_cell("-") if no_reg else build_avg_days_cell(r.get("포토인계소요일수"))
-    avg_photo = safe_cell("-") if no_reg else build_avg_days_cell(r.get("포토 소요일수"))
-    avg_register = safe_cell("-") if no_reg else build_avg_days_cell(r.get("상품등록소요일수"))
-    return f"<td>{safe_cell(r['브랜드'])}</td><td>{_fmt(r['입고스타일수'])}</td><td>{safe_cell(reg_sty_display)}</td><td>{rate_cell}</td><td>{avg_total}</td><td>{avg_photo_handover}</td><td>{avg_photo}</td><td>{avg_register}</td>"
+    rate_cell = safe_cell("-") if no_reg else build_rate_cell(
+        r.get("온라인등록율"),
+        r.get("_등록율")
+    )
+
+    avg_total = safe_cell("-") if no_reg else build_avg_days_cell(
+        r.get("평균전체등록소요일수")
+    )
+    avg_photo_handover = safe_cell("-") if no_reg else build_avg_days_cell(
+        r.get("포토인계소요일수")
+    )
+    avg_photo = safe_cell("-") if no_reg else build_avg_days_cell(
+        r.get("포토 소요일수")
+    )
+    avg_register = safe_cell("-") if no_reg else build_avg_days_cell(
+        r.get("상품등록소요일수")
+    )
+
+    return (
+        "<tr>"
+        f"<td>{safe_cell(r['브랜드'])}</td>"
+        f"<td>{_fmt(r['입고스타일수'])}</td>"
+        f"<td>{reg_sty_display}</td>"
+        f"<td>{rate_cell}</td>"
+        f"<td>{avg_total}</td>"
+        f"<td>{avg_photo_handover}</td>"
+        f"<td>{avg_photo}</td>"
+        f"<td>{avg_register}</td>"
+        "</tr>"
+    )
+
 
 body_monitor = "".join(("<tr class='bu-row'>" if r["브랜드"] in bu_labels else "<tr>") + _row_monitor(r) + "</tr>" for _, r in monitor_df.iterrows())
 
