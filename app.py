@@ -315,8 +315,21 @@ def load_brand_register_df(io_bytes=None, _cache_key=None, target_sheet_name=Non
         return out
     return pd.DataFrame()
 
+def _parse_date_series(col_series):
+    """컬럼 시리즈를 날짜 시리즈로 변환 (엑셀 숫자일 포함)."""
+    s = col_series.replace(0, pd.NA).replace("0", pd.NA)
+    numeric = pd.to_numeric(s, errors="coerce")
+    excel_mask = numeric.between(1, 60000, inclusive="both")
+    dt = pd.to_datetime(s, errors="coerce")
+    if excel_mask.any():
+        dt = dt.copy()
+        dt.loc[excel_mask] = pd.to_datetime(numeric[excel_mask], unit="d", origin="1899-12-30", errors="coerce")
+    return dt
+
+
 @st.cache_data(ttl=10)
 def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=None, _inout_cache_key=None, selected_seasons_tuple=None, target_sheet_name=None):
+    """브랜드별 평균 소요일수 반환. dict 키: 평균전체등록소요일수, 포토인계소요일수, 포토소요일수, 상품등록소요일수."""
     if not reg_bytes or len(reg_bytes) == 0:
         return None
     base_map = _base_style_to_first_in_map(inout_bytes, _inout_cache_key or "inout") if inout_bytes else {}
@@ -341,6 +354,8 @@ def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=No
         style_col = _col_idx(header_vals, "스타일코드") or _col_idx(header_vals, "스타일")
         regdate_col = _col_idx(header_vals, "공홈등록일")
         season_col = _col_idx(header_vals, "시즌")
+        photo_handover_col = _col_idx(header_vals, "포토인계일")
+        retouch_done_col = _col_idx(header_vals, "리터칭완료일")
         if style_col is None or regdate_col is None:
             continue
         data = df_raw.iloc[header_row_idx + 1:].copy()
@@ -357,18 +372,16 @@ def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=No
                 data = data.loc[mask_filter & mask_strict]
         if data.empty:
             continue
-        reg_series = data.iloc[:, regdate_col]
         style_series = data.iloc[:, style_col]
-        s = reg_series.replace(0, pd.NA).replace("0", pd.NA)
-        numeric = pd.to_numeric(s, errors="coerce")
-        excel_mask = numeric.between(1, 60000, inclusive="both")
-        reg_dt = pd.to_datetime(s, errors="coerce")
-        if excel_mask.any():
-            reg_dt = reg_dt.copy()
-            reg_dt.loc[excel_mask] = pd.to_datetime(numeric[excel_mask], unit="d", origin="1899-12-30", errors="coerce")
+        reg_dt = _parse_date_series(data.iloc[:, regdate_col])
+        photo_dt = _parse_date_series(data.iloc[:, photo_handover_col]) if photo_handover_col is not None and photo_handover_col < data.shape[1] else pd.Series(pd.NaT, index=data.index)
+        retouch_dt = _parse_date_series(data.iloc[:, retouch_done_col]) if retouch_done_col is not None and retouch_done_col < data.shape[1] else pd.Series(pd.NaT, index=data.index)
         style_ok = style_series.astype(str).str.strip().replace(r"^\s*$", pd.NA, regex=True).notna()
         register_ok = reg_dt.notna()
-        diffs = []
+        total_diffs = []
+        photo_handover_diffs = []
+        photo_diffs = []
+        register_diffs = []
         for idx in data.index:
             if not (style_ok.loc[idx] and register_ok.loc[idx]):
                 continue
@@ -376,9 +389,24 @@ def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=No
             base_dt = base_map.get(style_norm)
             if base_dt is None or pd.isna(reg_dt.loc[idx]):
                 continue
-            days = (reg_dt.loc[idx] - base_dt).days
-            diffs.append(max(0, days))
-        return float(sum(diffs)) / len(diffs) if diffs else None
+            total_days = (reg_dt.loc[idx] - base_dt).days
+            total_diffs.append(max(0, total_days))
+            if photo_dt.notna().loc[idx] and photo_handover_col is not None:
+                d = (photo_dt.loc[idx] - base_dt).days
+                photo_handover_diffs.append(max(0, d))
+            if retouch_dt.notna().loc[idx] and photo_dt.notna().loc[idx] and retouch_done_col is not None:
+                d = (retouch_dt.loc[idx] - photo_dt.loc[idx]).days
+                photo_diffs.append(max(0, d))
+            if retouch_dt.notna().loc[idx] and retouch_done_col is not None:
+                d = (reg_dt.loc[idx] - retouch_dt.loc[idx]).days
+                register_diffs.append(max(0, d))
+        result = {
+            "평균전체등록소요일수": float(sum(total_diffs)) / len(total_diffs) if total_diffs else None,
+            "포토인계소요일수": float(sum(photo_handover_diffs)) / len(photo_handover_diffs) if photo_handover_diffs else None,
+            "포토소요일수": float(sum(photo_diffs)) / len(photo_diffs) if photo_diffs else None,
+            "상품등록소요일수": float(sum(register_diffs)) / len(register_diffs) if register_diffs else None,
+        }
+        return result
     return None
 
 # ---- 스타일 테이블 / 입출고 집계 ----
@@ -660,7 +688,10 @@ table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in[
 table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["입고스타일수"].replace(0, 1)).round(2)
 table_df["전체 미등록스타일"] = table_df["입고스타일수"] - table_df["온라인등록스타일수"]
 table_df["등록수"] = table_df["온라인등록스타일수"]
-table_df["평균 등록 소요일수"] = "-"
+table_df["평균전체등록소요일수"] = "-"
+table_df["포토인계소요일수"] = "-"
+table_df["포토 소요일수"] = "-"
+table_df["상품등록소요일수"] = "-"
 table_df["미분배(분배팀)"] = "-"
 _season_tuple = tuple(selected_seasons) if selected_seasons else None
 for brand_name in table_df["브랜드"].unique():
@@ -671,7 +702,10 @@ for brand_name in table_df["브랜드"].unique():
         continue
     avg_days = load_brand_register_avg_days(reg_bytes, base_bytes, _cache_key=BRAND_TO_KEY[brand_name], _inout_cache_key="inout", selected_seasons_tuple=_season_tuple, target_sheet_name=BRAND_KEY_TO_SHEET_NAME.get(BRAND_TO_KEY[brand_name]))
     if avg_days is not None:
-        table_df.loc[table_df["브랜드"] == brand_name, "평균 등록 소요일수"] = f"{avg_days:.1f}"
+        for key, col in [("평균전체등록소요일수", "평균전체등록소요일수"), ("포토인계소요일수", "포토인계소요일수"), ("포토소요일수", "포토 소요일수"), ("상품등록소요일수", "상품등록소요일수")]:
+            v = avg_days.get(key)
+            if v is not None:
+                table_df.loc[table_df["브랜드"] == brand_name, col] = f"{v:.1f}"
 for b in NO_REG_SHEET_BRANDS:
     if b in table_df["브랜드"].values:
         table_df.loc[table_df["브랜드"] == b, "온라인등록스타일수"] = -1
@@ -717,8 +751,11 @@ def _th_sort(label, col_index):
     return f"<th class='th-sort' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
 th_rate = f'<th class="th-sort" data-col-index="3" data-order="desc"><span class="rate-help" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="3" title="정렬">↕</a></th>'
-th_avg = f'<th class="th-sort"><span class="avg-help" data-tooltip="{avg_tooltip}">평균 등록 소요일수</span></th>'
-header_monitor = "<tr><th>브랜드</th>" + _th_sort("입고스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_avg + "</tr>"
+th_avg_total = f'<th class="th-sort"><span class="avg-help" data-tooltip="{avg_tooltip}">평균전체등록소요일수</span></th>'
+th_photo_handover = '<th class="th-sort"><span class="avg-help" data-tooltip="포토인계일-최초입고일 평균">포토인계소요일수</span></th>'
+th_photo = '<th class="th-sort"><span class="avg-help" data-tooltip="리터칭완료일-포토인계일 평균">포토 소요일수</span></th>'
+th_register = '<th class="th-sort"><span class="avg-help" data-tooltip="공홈등록일-리터칭완료일 평균">상품등록소요일수</span></th>'
+header_monitor = "<tr><th>브랜드</th>" + _th_sort("입고스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_avg_total + th_photo_handover + th_photo + th_register + "</tr>"
 
 def _fmt(n):
     return f"{int(n):,}"
@@ -727,8 +764,11 @@ def _row_monitor(r):
     no_reg = r["브랜드"] in NO_REG_SHEET_BRANDS
     reg_sty_display = "-" if no_reg else _fmt(r["온라인등록스타일수"])
     rate_cell = safe_cell("-") if no_reg else build_rate_cell(r.get("온라인등록율"), r.get("_등록율"))
-    avg_cell = safe_cell("-") if no_reg else build_avg_days_cell(r.get("평균 등록 소요일수"))
-    return f"<td>{safe_cell(r['브랜드'])}</td><td>{_fmt(r['입고스타일수'])}</td><td>{safe_cell(reg_sty_display)}</td><td>{rate_cell}</td><td>{avg_cell}</td>"
+    avg_total = safe_cell("-") if no_reg else build_avg_days_cell(r.get("평균전체등록소요일수"))
+    avg_photo_handover = safe_cell("-") if no_reg else build_avg_days_cell(r.get("포토인계소요일수"))
+    avg_photo = safe_cell("-") if no_reg else build_avg_days_cell(r.get("포토 소요일수"))
+    avg_register = safe_cell("-") if no_reg else build_avg_days_cell(r.get("상품등록소요일수"))
+    return f"<td>{safe_cell(r['브랜드'])}</td><td>{_fmt(r['입고스타일수'])}</td><td>{safe_cell(reg_sty_display)}</td><td>{rate_cell}</td><td>{avg_total}</td><td>{avg_photo_handover}</td><td>{avg_photo}</td><td>{avg_register}</td>"
 
 body_monitor = "".join(("<tr class='bu-row'>" if r["브랜드"] in bu_labels else "<tr>") + _row_monitor(r) + "</tr>" for _, r in monitor_df.iterrows())
 
