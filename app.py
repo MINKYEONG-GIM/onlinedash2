@@ -568,6 +568,8 @@ DARK_CSS = """<style>
 .monitor-table .rate-red{background:#ef4444}.monitor-table .rate-yellow{background:#f59e0b}.monitor-table .rate-green{background:#22c55e}
 .monitor-table .rate-cell::after,.monitor-table .avg-cell::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}
 .monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{content:attr(data-tooltip);opacity:1}
+.monitor-table thead th:hover{z-index:10}
+.monitor-table .avg-help.tt-left::after{left:0;transform:translateX(0);bottom:calc(100% + 6px)}
 .monitor-table td.col-emphasis,.monitor-table th.col-emphasis{font-size:1.045rem;color:#fbbf24}
 .monitor-table td.col-small,.monitor-table th.col-small{font-size:0.855rem}
 .inout-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;overflow:hidden}
@@ -779,7 +781,7 @@ th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follo
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일</span></th>'
-th_online_in = '<th class="th-sort col-small" data-col-index="2" data-order="desc"><span class="avg-help" data-tooltip="일부 QR 등 온라인 미판매 스타일을 제외한 입고스타일수">온라인상품<br>입고스타일</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="2" title="정렬">↕</a></th>'
+th_online_in = '<th class="th-sort col-small" data-col-index="2" data-order="desc"><span class="avg-help tt-left" data-tooltip="일부 QR 등 온라인 미판매 스타일을 제외한 입고스타일수">온라인상품<br>입고스타일</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="2" title="정렬">↕</a></th>'
 header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + th_online_in + _th_sort("온라인등록<br>스타일수", 3) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
@@ -832,6 +834,8 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table .rate-help,.monitor-table .avg-help{{position:relative;display:inline-block;cursor:help}}
 .monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100%+6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}}
 .monitor-table .rate-help:hover::after,.monitor-table .avg-help:hover::after,.monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{{content:attr(data-tooltip);opacity:1}}
+.monitor-table thead th:hover{{z-index:10}}
+.monitor-table .avg-help.tt-left::after{{left:0;transform:translateX(0);bottom:calc(100%+6px)}}
 .monitor-table .tt-follow::after{{content:none!important;display:none!important}}
 .monitor-table td.col-emphasis,.monitor-table th.col-emphasis{{font-size:1.045rem;color:#fbbf24}}
 .monitor-table td.col-small,.monitor-table th.col-small{{font-size:0.855rem}}
