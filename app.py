@@ -814,3 +814,27 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
+
+
+
+
+
+# === 온라인 스프레드시트 구조 확인 (Streamlit 화면 출력용) ===
+
+st.subheader("📄 Online Spreadsheet 구조 확인")
+
+worksheets = sh.worksheets()
+st.write(f"워크시트 개수: {len(worksheets)}")
+
+for ws in worksheets:
+    st.markdown("---")
+    st.markdown(f"### 워크시트: **{ws.title}**")
+
+    header = ws.row_values(1)
+
+    if header:
+        st.write("컬럼 목록:")
+        for col in header:
+            st.write(f"- [{col}]")
+    else:
+        st.warning("컬럼 없음 (빈 워크시트)")
