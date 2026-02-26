@@ -215,13 +215,17 @@ def _find_register_header(df_raw):
     return None, None
 
 # ---- BASE 입출고 ----
+# target_sheet_name: 지정 시 해당 워크시트 사용 (예: "물류입고스타일수", "온라인입고스타일수"). 미지정 시 기존처럼 첫 번째 비-_ 시트 사용.
 @st.cache_data(ttl=300)
-def load_base_inout(io_bytes=None, _cache_key=None):
+def load_base_inout(io_bytes=None, _cache_key=None, target_sheet_name=None):
     if io_bytes is None or len(io_bytes) == 0:
         return pd.DataFrame()
     excel_file = pd.ExcelFile(BytesIO(io_bytes))
-    sheet_candidates = [s for s in excel_file.sheet_names if not str(s).startswith("_")]
-    sheet_name = sheet_candidates[0] if sheet_candidates else excel_file.sheet_names[-1]
+    if target_sheet_name and str(target_sheet_name).strip() in excel_file.sheet_names:
+        sheet_name = str(target_sheet_name).strip()
+    else:
+        sheet_candidates = [s for s in excel_file.sheet_names if not str(s).startswith("_")]
+        sheet_name = sheet_candidates[0] if sheet_candidates else excel_file.sheet_names[-1]
     preview = pd.read_excel(BytesIO(io_bytes), sheet_name=sheet_name, header=None)
     kw = ["브랜드", "스타일", "최초입고일", "입고", "출고", "판매"]
     best_row, best_score = None, 0
@@ -412,7 +416,10 @@ def load_brand_register_avg_days(reg_bytes=None, inout_bytes=None, _cache_key=No
 # ---- 스타일 테이블 / 입출고 집계 ----
 def build_style_table_all(sources):
     base_bytes = sources.get("inout", (None, None))[0]
-    df_base = load_base_inout(base_bytes, _cache_key="inout")
+    # 물류입고스타일수: base 스프레드시트의 "물류입고스타일수" 워크시트 사용
+    df_base = load_base_inout(base_bytes, _cache_key="inout_물류", target_sheet_name="물류입고스타일수")
+    if df_base.empty and base_bytes:
+        df_base = load_base_inout(base_bytes, _cache_key="inout", target_sheet_name=None)
     if df_base.empty:
         return pd.DataFrame()
     style_col = find_col(["스타일코드", "스타일"], df=df_base)
@@ -685,7 +692,20 @@ df_style_unique = df_for_table.drop_duplicates(subset=["브랜드", "시즌", "�
 df_in = df_style_unique[df_style_unique["입고 여부"] == "Y"]
 all_brands = sorted(df_style_all["브랜드"].unique())
 table_df = pd.DataFrame({"브랜드": all_brands})
+# 물류입고스타일수: base 스프레드시트 "물류입고스타일수" 시트 기준 (df_in은 이미 해당 시트에서 생성됨)
 table_df["물류입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
+# 온라인입고스타일수: base 스프레드시트 "온라인입고스타일수" 시트에서 브랜드별 스타일 수
+base_bytes = sources.get("inout", (None, None))[0]
+df_online_in = load_base_inout(base_bytes, _cache_key="inout_온라인입고", target_sheet_name="온라인입고스타일수") if base_bytes else pd.DataFrame()
+if not df_online_in.empty:
+    style_col_oi = find_col(["스타일코드", "스타일"], df=df_online_in)
+    brand_col_oi = "브랜드" if "브랜드" in df_online_in.columns else None
+    if style_col_oi and brand_col_oi:
+        table_df["온라인입고스타일수"] = table_df["브랜드"].map(df_online_in.groupby("브랜드")[style_col_oi].nunique()).fillna(0).astype(int)
+    else:
+        table_df["온라인입고스타일수"] = 0
+else:
+    table_df["온라인입고스타일수"] = 0
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / table_df["물류입고스타일수"].replace(0, 1)).round(2)
 table_df["전체 미등록스타일"] = table_df["물류입고스타일수"] - table_df["온라인등록스타일수"]
@@ -735,29 +755,29 @@ def build_rate_cell(rate_val, rate_text):
         dot_class = "rate-red" if v <= 0.8 else ("rate-yellow" if v <= 0.9 else "rate-green")
     except Exception:
         return rate_str
-    return f"<span class='rate-cell' data-tooltip='{TOOLTIP_RATE}'><span class='rate-dot {dot_class}'></span>{rate_str}</span>"
+    return f"<span class='rate-cell tt-follow' data-tooltip='{TOOLTIP_RATE}'><span class='rate-dot {dot_class}'></span>{rate_str}</span>"
 
 def build_avg_days_cell(value_text):
     raw = str(value_text).replace(",", "").strip()
     if raw in ("", "-", "nan"):
-        return f"<span class='avg-cell' data-tooltip='{TOOLTIP_AVG}'>{safe_cell(value_text)}</span>"
+        return f"<span class='avg-cell tt-follow' data-tooltip='{TOOLTIP_AVG}'>{safe_cell(value_text)}</span>"
     try:
         num_val = float(raw)
         dot_class = "rate-green" if num_val <= 3 else ("rate-yellow" if num_val <= 5 else "rate-red")
-        return f"<span class='avg-cell' data-tooltip='{TOOLTIP_AVG}'><span class='rate-dot {dot_class}'></span>{safe_cell(value_text)}</span>"
+        return f"<span class='avg-cell tt-follow' data-tooltip='{TOOLTIP_AVG}'><span class='rate-dot {dot_class}'></span>{safe_cell(value_text)}</span>"
     except Exception:
-        return f"<span class='avg-cell' data-tooltip='{TOOLTIP_AVG}'>{safe_cell(value_text)}</span>"
+        return f"<span class='avg-cell tt-follow' data-tooltip='{TOOLTIP_AVG}'>{safe_cell(value_text)}</span>"
 
 def _th_sort(label, col_index):
     inner = label + f"<a class='sort-arrow' href='javascript:void(0)' role='button' data-col='{col_index}' title='정렬'>↕</a>"
     return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
-th_rate = f'<th class="th-sort col-emphasis" data-col-index="3" data-order="desc"><span class="rate-help" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="3" title="정렬">↕</a></th>'
-th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help" data-tooltip="{avg_tooltip}">전체 온라인등록 ~&#10;소요일</span></th>'
+th_rate = f'<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
+th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follow" data-tooltip="{avg_tooltip}">전체 온라인등록 &#10;소요일</span></th>'
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일</span></th>'
-header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
+header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + _th_sort("온라인상품<br>입고스타일", 2) + _th_sort("온라인등록<br>스타일수", 3) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
     return f"{int(n):,}"
@@ -783,6 +803,7 @@ def _row_monitor(r):
     return (
         f"<td class='col-small'>{safe_cell(r['브랜드'])}</td>"
         f"<td class='col-small'>{_fmt(r['물류입고스타일수'])}</td>"
+        f"<td class='col-small'>{_fmt(r.get('온라인입고스타일수', 0))}</td>"
         f"<td class='col-small'>{reg_sty_display}</td>"
         f"<td class='col-emphasis'>{rate_cell}</td>"
         f"<td class='col-small'>{avg_photo_handover}</td>"
@@ -808,11 +829,13 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table .rate-help,.monitor-table .avg-help{{position:relative;display:inline-block;cursor:help}}
 .monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100%+6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}}
 .monitor-table .rate-help:hover::after,.monitor-table .avg-help:hover::after,.monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{{content:attr(data-tooltip);opacity:1}}
+.monitor-table .tt-follow::after{{content:none!important;display:none!important}}
 .monitor-table td.col-emphasis,.monitor-table th.col-emphasis{{font-size:1.045rem;color:#fbbf24}}
 .monitor-table td.col-small,.monitor-table th.col-small{{font-size:0.855rem}}
+#tooltip-follow{{position:fixed;display:none;white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:9999;pointer-events:none}}
 .table-wrap{{max-height:600px;overflow-y:auto}}
 .monitor-table thead th{{position:sticky;top:0;z-index:5;background:#0f172a}}
-</style></head><body><div class="table-wrap"><table class="monitor-table" id="monitor-table-register"><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>
+</style></head><body><div id="tooltip-follow"></div><div class="table-wrap"><table class="monitor-table" id="monitor-table-register"><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>
 <script>(function(){{
 var t=document.getElementById("monitor-table-register");if(!t)return;
 function g(td){{var v=(td&&td.textContent||"").trim().replace(/[,%]/g,"");if(v===""||v==="-")return null;var n=parseFloat(v);return isNaN(n)?v:n}}
@@ -826,7 +849,13 @@ t.addEventListener("click",function(e){{var a=e.target.closest("a.sort-arrow");i
 var ci=parseInt(th.getAttribute("data-col-index"),10),ord=th.getAttribute("data-order")==="desc"?"asc":"desc";th.setAttribute("data-order",ord);
 t.querySelectorAll("thead th.th-sort").forEach(function(h){{var i=h.getAttribute("data-col-index"),x=h.querySelector("a.sort-arrow");if(!x)return;if(i===String(ci)){{h.setAttribute("data-order",ord);x.textContent=ord==="desc"?"▼":"▲"}}else{{h.setAttribute("data-order","desc");x.textContent="↕"}}}});
 var tb=t.querySelector("tbody");if(tb)sort(tb,ci,ord);
-}});}})();</script></body></html>"""
+}});
+var tip=document.getElementById("tooltip-follow");var offset=12;
+function showTip(e,text){{if(!text)return;tip.textContent=text.replace(/&#10;/g,"\\n");tip.style.display="block";tip.style.left=(e.clientX+offset)+"px";tip.style.top=(e.clientY+offset)+"px";}}
+function moveTip(e){{tip.style.left=(e.clientX+offset)+"px";tip.style.top=(e.clientY+offset)+"px";}}
+function hideTip(){{tip.style.display="none";}}
+document.querySelectorAll(".tt-follow").forEach(function(el){{var text=el.getAttribute("data-tooltip");if(!text)return;el.addEventListener("mouseenter",function(e){{showTip(e,text);}});el.addEventListener("mousemove",moveTip);el.addEventListener("mouseleave",hideTip);}});
+}})();</script></body></html>"""
 try:
     import streamlit.components.v1 as components
     components.html(MONITOR_TABLE_HTML, height=min(600, 120 + len(monitor_df) * 28), scrolling=False)
