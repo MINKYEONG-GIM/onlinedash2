@@ -553,13 +553,13 @@ DARK_CSS = """<style>
 .monitor-table thead th{background:#0f172a;color:#f1f5f9;font-weight:700}
 .monitor-table tr.bu-row td{background:#d9f7ee;color:#000;font-size:1.15rem;font-weight:700}
 .monitor-table .rate-help,.monitor-table .avg-help,.monitor-table .sum-help{position:relative;display:inline-block;cursor:help}
-.monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .sum-help::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;max-width:420px;min-width:280px;background:#111827;color:#f1f5f9;padding:8px 12px;border-radius:6px;font-size:0.85rem;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,0.35);z-index:20}
+.monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .sum-help::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}
 .monitor-table .rate-help:hover::after,.monitor-table .avg-help:hover::after,.monitor-table .sum-help:hover::after{content:attr(data-tooltip);opacity:1}
 .monitor-table th.th-sort{white-space:nowrap;cursor:default}.monitor-table th.th-sort .sort-arrow{color:#94a3b8;text-decoration:none;margin-left:4px;font-size:0.75rem;cursor:pointer}.monitor-table th.th-sort .sort-arrow:hover{color:#f1f5f9}
 .monitor-table .rate-cell,.monitor-table .avg-cell{display:inline-flex;align-items:center;gap:6px;justify-content:center;position:relative;cursor:help}
 .monitor-table .rate-dot{width:16px;height:16px;border-radius:50%;display:inline-block}
 .monitor-table .rate-red{background:#ef4444}.monitor-table .rate-yellow{background:#f59e0b}.monitor-table .rate-green{background:#22c55e}
-.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;max-width:420px;min-width:280px;background:#111827;color:#f1f5f9;padding:8px 12px;border-radius:6px;font-size:0.85rem;z-index:20}
+.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}
 .monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{content:attr(data-tooltip);opacity:1}
 .inout-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;overflow:hidden}
 .inout-table th,.inout-table td{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}
@@ -809,7 +809,7 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table .rate-dot{{width:16px;height:16px;border-radius:50%;display:inline-block}}
 .monitor-table .rate-red{{background:#ef4444}}.monitor-table .rate-yellow{{background:#f59e0b}}.monitor-table .rate-green{{background:#22c55e}}
 .monitor-table .rate-help,.monitor-table .avg-help{{position:relative;display:inline-block;cursor:help}}
-.monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100%+6px);white-space:pre-line;max-width:420px;min-width:280px;background:#111827;color:#f1f5f9;padding:8px 12px;border-radius:6px;font-size:0.85rem;z-index:20}}
+.monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100%+6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}}
 .monitor-table .rate-help:hover::after,.monitor-table .avg-help:hover::after,.monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{{content:attr(data-tooltip);opacity:1}}
 .table-wrap{{max-height:600px;overflow-y:auto}}
 .monitor-table thead th{{position:sticky;top:0;z-index:5;background:#0f172a}}
