@@ -753,10 +753,10 @@ def _th_sort(label, col_index):
     return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
 th_rate = f'<th class="th-sort col-emphasis" data-col-index="3" data-order="desc"><span class="rate-help" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="3" title="정렬">↕</a></th>'
-th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help" data-tooltip="{avg_tooltip}">평균전체등록소요일수</span></th>'
-th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일수</span></th>'
-th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일수</span></th>'
-th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일수</span></th>'
+th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help" data-tooltip="{avg_tooltip}">전체 온라인등록 ~&#10;소요일</span></th>'
+th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일</span></th>'
+th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
+th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일</span></th>'
 header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
