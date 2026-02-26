@@ -242,21 +242,21 @@ def load_base_inout(io_bytes=None, _cache_key=None):
 
 @st.cache_data(ttl=1)
 def _base_style_to_first_in_map(io_bytes=None, _cache_key=None):
-    load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
+    df = load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
     if df.empty:
         return {}
     style_col = find_col(["스타일코드", "스타일"], df=df)
     first_col = find_col(["최초입고일", "입고일"], df=df)
     if not style_col or not first_col:
         return {}
-    df.copy()
+    df = df.copy()
     df["_style"] = df[style_col].astype(str).str.strip().str.replace(" ", "", regex=False)
     numeric = pd.to_numeric(df[first_col], errors="coerce")
     excel_mask = numeric.between(1, 60000, inclusive="both")
     df["_first_in"] = pd.to_datetime(df[first_col], errors="coerce")
     if excel_mask.any():
         df.loc[excel_mask, "_first_in"] = pd.to_datetime(numeric[excel_mask], unit="d", origin="1899-12-30", errors="coerce")
-    df[df["_first_in"].notna() & (df["_style"].str.len() > 0)]
+    df = df[df["_first_in"].notna() & (df["_style"].str.len() > 0)]
     return df.groupby("_style")["_first_in"].min().to_dict() if not df.empty else {}
 
 def _norm_season(val):
@@ -712,9 +712,9 @@ for b in NO_REG_SHEET_BRANDS:
         table_df.loc[table_df["브랜드"] == b, "온라인등록율"] = -1.0
 
 bu_labels = {label for label, _ in bu_groups}
-monitor_table_df.copy()
+monitor_df = table_df.copy()
 monitor_df["_등록율"] = monitor_df.apply(lambda r: "-" if r["브랜드"] in NO_REG_SHEET_BRANDS else str(int(r["온라인등록율"] * 100) if r["온라인등록율"] >= 0 else 0) + "%", axis=1)
-monitor_monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
+monitor_df = monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
 
 TOOLTIP_RATE = "(초록불) 90% 초과&#10;(노란불) 80% 초과&#10;(빨간불) 80% 이하"
 TOOLTIP_AVG = "(초록불) 3일 이하&#10;(노란불) 5일 이하&#10;(빨간불) 5일 초과"
@@ -784,7 +784,6 @@ def _row_monitor(r):
     )
 
     return (
-        "<tr>"
         f"<td>{safe_cell(r['브랜드'])}</td>"
         f"<td>{_fmt(r['입고스타일수'])}</td>"
         f"<td>{reg_sty_display}</td>"
@@ -793,7 +792,6 @@ def _row_monitor(r):
         f"<td>{avg_photo_handover}</td>"
         f"<td>{avg_photo}</td>"
         f"<td>{avg_register}</td>"
-        "</tr>"
     )
 
 
@@ -846,7 +844,7 @@ def _fmt_eok_table(v):
     except Exception:
         return "0 억 원"
 def _get_season_rows(brand):
-    brand_season_df[brand_season_df["브랜드"] == brand].sort_values("시즌")
+    df = brand_season_df[brand_season_df["브랜드"] == brand].sort_values("시즌")
     if df.empty:
         return []
     rows = []
