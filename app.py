@@ -613,7 +613,7 @@ if selected_seasons and set(selected_seasons) != set(seasons):
 if selected_brand and selected_brand != "브랜드 전체":
     df_style = df_style[df_style["브랜드"] == selected_brand]
 
-inout_rows, inout_agg, brand_season_build_inout_aggregates(base_bytes)
+inout_rows, inout_agg, brand_season_df = build_inout_aggregates(base_bytes)
 df_base = load_base_inout(base_bytes, _cache_key="base")
 if selected_brand and selected_brand != "브랜드 전체" and "브랜드" in df_base.columns:
     df_base = df_base[df_base["브랜드"].astype(str).str.strip() == selected_brand].copy()
@@ -875,7 +875,7 @@ def _build_inout_table_html(display_df):
 st.markdown('<div style="height:40px;"></div>', unsafe_allow_html=True)
 st.markdown('<div class="section-title">(온/오프 전체) 입출고 현황</div>', unsafe_allow_html=True)
 st.markdown('<div style="font-size:1.1rem;color:#cbd5e1;margin-bottom:0.5rem;">STY 기준 통계</div>', unsafe_allow_html=True)
-display_pd.DataFrame(inout_rows)[["브랜드"] + TABLE_COLS]
+display_df = pd.DataFrame(inout_rows)[["브랜드"] + TABLE_COLS]
 st.markdown('<div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:0.5rem;">브랜드명을 클릭하면 시즌별 수치를 보실 수 있습니다</div>', unsafe_allow_html=True)
 try:
     import streamlit.components.v1 as components
