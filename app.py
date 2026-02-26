@@ -478,7 +478,7 @@ def build_style_table_all(sources):
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 def build_inout_aggregates(io_bytes):
-    load_base_inout(io_bytes, _cache_key="base")
+    df = load_base_inout(io_bytes, _cache_key="base")
     if df.empty:
         return [], {}, pd.DataFrame()
     style_col = find_col(["스타일코드", "스타일"], df=df)
