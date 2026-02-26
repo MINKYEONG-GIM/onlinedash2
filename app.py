@@ -238,6 +238,53 @@ def load_base_inout(io_bytes=None, _cache_key=None):
         df["브랜드"] = prefix.map({"sp": "스파오", "rm": "로엠", "mi": "미쏘", "wh": "후아유", "hp": "슈펜", "cv": "클라비스", "eb": "에블린", "nb": "뉴발란스", "nk": "뉴발란스키즈"})
     return df
 
+
+def show_online_sheet_structure(online_bytes):
+    if not online_bytes:
+        st.warning("온라인 스프레드시트 데이터를 불러오지 못했습니다.")
+        return
+
+    try:
+        excel = pd.ExcelFile(BytesIO(online_bytes))
+    except Exception as e:
+        st.error("엑셀 파일을 여는 데 실패했습니다.")
+        st.write(e)
+        return
+
+    st.subheader("📄 온라인 스프레드시트 구조 확인")
+
+    for sheet_name in excel.sheet_names:
+        st.markdown(f"### ▸ 워크시트: {sheet_name}")
+
+        try:
+            # 헤더만 확인 (상위 10줄)
+            df_preview = pd.read_excel(
+                excel,
+                sheet_name=sheet_name,
+                header=None,
+                nrows=10
+            )
+        except Exception:
+            st.write("이 워크시트를 읽을 수 없습니다.")
+            continue
+
+        # 컬럼 후보 찾기
+        header_row = None
+        for i in range(len(df_preview)):
+            row = df_preview.iloc[i].astype(str)
+            if row.str.contains("스타일").any():
+                header_row = i
+                break
+
+        if header_row is None:
+            st.write("컬럼 헤더를 찾지 못했습니다.")
+            st.dataframe(df_preview)
+            continue
+
+        columns = df_preview.iloc[header_row].dropna().astype(str).tolist()
+        st.write("컬럼 목록:")
+        st.code(", ".join(columns))
+
 @st.cache_data(ttl=300)
 def _base_style_to_first_in_map(io_bytes=None, _cache_key=None):
     df = load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
@@ -543,6 +590,8 @@ _check_auth()
 
 update_time = datetime.now()
 sources = get_all_sources()
+online_bytes = fetch_sheet_bytes(ONLINE_SPREADSHEET_ID)
+show_online_sheet_structure(online_bytes)
 base_bytes = sources.get("inout", (None, None))[0]
 df_style_all = build_style_table_all(sources)
 st.markdown(DARK_CSS, unsafe_allow_html=True)
