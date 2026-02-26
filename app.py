@@ -240,7 +240,7 @@ def load_base_inout(io_bytes=None, _cache_key=None):
 
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=1)
 def _base_style_to_first_in_map(io_bytes=None, _cache_key=None):
     df = load_base_inout(io_bytes, _cache_key=_cache_key or "inout")
     if df.empty:
