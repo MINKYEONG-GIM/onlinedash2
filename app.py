@@ -817,9 +817,24 @@ except Exception:
 
 
 
+import gspread
+from google.oauth2.service_account import Credentials
 
+# 1. credentials
+credentials = Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+)
 
-# === 온라인 스프레드시트 구조 확인 (Streamlit 화면 출력용) ===
+# 2. gspread client
+gc = gspread.authorize(credentials)
+
+# 3. 스프레드시트 열기 (여기서 sh 생성됨)
+sh = gc.open_by_key(online_spreadsheet_id)
+
+# ===============================
+# ✅ 여기부터 추가해야 함
+# ===============================
 
 st.subheader("📄 Online Spreadsheet 구조 확인")
 
@@ -838,3 +853,7 @@ for ws in worksheets:
             st.write(f"- [{col}]")
     else:
         st.warning("컬럼 없음 (빈 워크시트)")
+
+# ===============================
+# ❌ 이 위에 두면 NameError 난다
+# ===============================
