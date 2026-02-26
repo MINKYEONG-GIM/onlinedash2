@@ -545,8 +545,7 @@ _check_auth()
 
 update_time = datetime.now()
 sources = get_all_sources()
-online_bytes = fetch_sheet_bytes(ONLINE_SPREADSHEET_ID)
-show_online_sheet_structure(online_bytes)
+
 base_bytes = sources.get("inout", (None, None))[0]
 df_style_all = build_style_table_all(sources)
 st.markdown(DARK_CSS, unsafe_allow_html=True)
