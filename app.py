@@ -561,6 +561,8 @@ DARK_CSS = """<style>
 .monitor-table .rate-red{background:#ef4444}.monitor-table .rate-yellow{background:#f59e0b}.monitor-table .rate-green{background:#22c55e}
 .monitor-table .rate-cell::after,.monitor-table .avg-cell::after{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100% + 6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}
 .monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{content:attr(data-tooltip);opacity:1}
+.monitor-table td.col-emphasis,.monitor-table th.col-emphasis{font-size:1.045rem;color:#fbbf24}
+.monitor-table td.col-small,.monitor-table th.col-small{font-size:0.855rem}
 .inout-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;overflow:hidden}
 .inout-table th,.inout-table td{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}
 .inout-table thead th{background:#0f172a;color:#f1f5f9;font-weight:700}
@@ -748,14 +750,14 @@ def build_avg_days_cell(value_text):
 
 def _th_sort(label, col_index):
     inner = label + f"<a class='sort-arrow' href='javascript:void(0)' role='button' data-col='{col_index}' title='정렬'>↕</a>"
-    return f"<th class='th-sort' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
+    return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
-th_rate = f'<th class="th-sort" data-col-index="3" data-order="desc"><span class="rate-help" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="3" title="정렬">↕</a></th>'
-th_avg_total = f'<th class="th-sort"><span class="avg-help" data-tooltip="{avg_tooltip}">평균전체등록소요일수</span></th>'
-th_photo_handover = '<th class="th-sort"><span class="avg-help" data-tooltip="최초입고부터&#10; 포토팀수령 소요일">포토인계소요일수</span></th>'
-th_photo = '<th class="th-sort"><span class="avg-help" data-tooltip="촬영샘플 수령부터&#10;제품컷완성 소요일">포토 소요일수</span></th>'
-th_register = '<th class="th-sort"><span class="avg-help" data-tooltip="제품컷 완성부터&#10;온라인등록 소요일">상품등록소요일수</span></th>'
-header_monitor = "<tr><th>브랜드</th>" + _th_sort("입고스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_avg_total + th_photo_handover + th_photo + th_register + "</tr>"
+th_rate = f'<th class="th-sort col-emphasis" data-col-index="3" data-order="desc"><span class="rate-help" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="3" title="정렬">↕</a></th>'
+th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help" data-tooltip="{avg_tooltip}">평균전체등록소요일수</span></th>'
+th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일수</span></th>'
+th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일수</span></th>'
+th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록소요일수</span></th>'
+header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("입고스타일수", 1) + _th_sort("온라인등록<br>스타일수", 2) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
 
 def _fmt(n):
     return f"{int(n):,}"
@@ -779,14 +781,14 @@ def _row_monitor(r):
     avg_register = safe_cell("-") if no_reg else safe_cell(r.get("상품등록소요일수"))
 
     return (
-        f"<td>{safe_cell(r['브랜드'])}</td>"
-        f"<td>{_fmt(r['입고스타일수'])}</td>"
-        f"<td>{reg_sty_display}</td>"
-        f"<td>{rate_cell}</td>"
-        f"<td>{avg_total}</td>"
-        f"<td>{avg_photo_handover}</td>"
-        f"<td>{avg_photo}</td>"
-        f"<td>{avg_register}</td>"
+        f"<td class='col-small'>{safe_cell(r['브랜드'])}</td>"
+        f"<td class='col-small'>{_fmt(r['입고스타일수'])}</td>"
+        f"<td class='col-small'>{reg_sty_display}</td>"
+        f"<td class='col-emphasis'>{rate_cell}</td>"
+        f"<td class='col-small'>{avg_photo_handover}</td>"
+        f"<td class='col-small'>{avg_photo}</td>"
+        f"<td class='col-small'>{avg_register}</td>"
+        f"<td class='col-emphasis'>{avg_total}</td>"
     )
 
 
@@ -806,6 +808,8 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table .rate-help,.monitor-table .avg-help{{position:relative;display:inline-block;cursor:help}}
 .monitor-table .rate-help::after,.monitor-table .avg-help::after,.monitor-table .rate-cell::after,.monitor-table .avg-cell::after{{content:"";position:absolute;opacity:0;pointer-events:none;left:50%;transform:translateX(-50%);bottom:calc(100%+6px);white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:20}}
 .monitor-table .rate-help:hover::after,.monitor-table .avg-help:hover::after,.monitor-table .rate-cell:hover::after,.monitor-table .avg-cell:hover::after{{content:attr(data-tooltip);opacity:1}}
+.monitor-table td.col-emphasis,.monitor-table th.col-emphasis{{font-size:1.045rem;color:#fbbf24}}
+.monitor-table td.col-small,.monitor-table th.col-small{{font-size:0.855rem}}
 .table-wrap{{max-height:600px;overflow-y:auto}}
 .monitor-table thead th{{position:sticky;top:0;z-index:5;background:#0f172a}}
 </style></head><body><div class="table-wrap"><table class="monitor-table" id="monitor-table-register"><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>
