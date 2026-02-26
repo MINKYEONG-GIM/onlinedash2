@@ -572,6 +572,12 @@ DARK_CSS = """<style>
 .monitor-table .avg-help.tt-left::after{left:0;transform:translateX(0);bottom:calc(100% + 6px)}
 .monitor-table td.col-emphasis,.monitor-table th.col-emphasis{font-size:1.045rem;color:#fbbf24}
 .monitor-table td.col-small,.monitor-table th.col-small{font-size:0.855rem}
+.monitor-table .th-sub{font-size:0.7rem;color:#f1f5f9;font-weight:normal;display:block;margin-top:2px}
+.monitor-table{table-layout:fixed}
+.monitor-table th.col-small,.monitor-table td.col-small{width:90px;min-width:90px;max-width:90px;box-sizing:border-box}
+.monitor-table th.col-emphasis,.monitor-table td.col-emphasis{width:120px;min-width:120px;max-width:120px;box-sizing:border-box}
+.monitor-table thead th{border:5px solid #fbbf24}
+.table-wrap.monitor-table-wrap{max-height:500px;overflow-y:auto;overflow-x:auto;border:1px solid #334155;border-radius:8px}
 .inout-table{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;overflow:hidden}
 .inout-table th,.inout-table td{border:1px solid #334155;padding:6px 8px;text-align:center;font-size:0.95rem}
 .inout-table thead th{background:#0f172a;color:#f1f5f9;font-weight:700}
@@ -776,7 +782,7 @@ def _th_sort(label, col_index):
     inner = label + f"<a class='sort-arrow' href='javascript:void(0)' role='button' data-col='{col_index}' title='정렬'>↕</a>"
     return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
-th_rate = f'<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="{rate_tooltip}">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
+th_rate = f'<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="{rate_tooltip}">온라인등록율</span><br><span class="th-sub">온라인등록 스타일수 / 온라인상품 입고스타일</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
 th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follow" data-tooltip="{avg_tooltip}">전체 온라인등록 &#10;소요일</span></th>'
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
@@ -839,8 +845,14 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table .tt-follow::after{{content:none!important;display:none!important}}
 .monitor-table td.col-emphasis,.monitor-table th.col-emphasis{{font-size:1.045rem;color:#fbbf24}}
 .monitor-table td.col-small,.monitor-table th.col-small{{font-size:0.855rem}}
+.monitor-table .th-sub{{font-size:0.7rem;color:#f1f5f9;font-weight:normal;display:block;margin-top:2px}}
+.monitor-table{{table-layout:fixed}}
+.monitor-table th.col-small,.monitor-table td.col-small{{width:90px;min-width:90px;max-width:90px;box-sizing:border-box}}
+.monitor-table th.col-emphasis,.monitor-table td.col-emphasis{{width:120px;min-width:120px;max-width:120px;box-sizing:border-box}}
+.monitor-table thead th{{border:5px solid #fbbf24}}
 #tooltip-follow{{position:fixed;display:none;white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:9999;pointer-events:none}}
-.table-wrap{{max-height:600px;overflow-y:auto}}
+html,body{{height:100%;margin:0;overflow:hidden}}
+.table-wrap{{height:100%;max-height:100%;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 .monitor-table thead th{{position:sticky;top:0;z-index:5;background:#0f172a}}
 </style></head><body><div id="tooltip-follow"></div><div class="table-wrap"><table class="monitor-table" id="monitor-table-register"><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>
 <script>(function(){{
@@ -865,9 +877,9 @@ document.querySelectorAll(".tt-follow").forEach(function(el){{var text=el.getAtt
 }})();</script></body></html>"""
 try:
     import streamlit.components.v1 as components
-    components.html(MONITOR_TABLE_HTML, height=min(600, 120 + len(monitor_df) * 28), scrolling=False)
+    components.html(MONITOR_TABLE_HTML, height=600, scrolling=True)
 except Exception:
-    st.markdown(f"<div class='monitor-table'><table class='monitor-table'><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='table-wrap monitor-table-wrap'><table class='monitor-table'><thead>{header_monitor}</thead><tbody>{body_monitor}</tbody></table></div>", unsafe_allow_html=True)
 
 # 브랜드별 입출고 모니터링
 TABLE_COLS = ["발주 STY수", "발주액", "입고 STY수", "입고액", "출고 STY수", "출고액", "판매 STY수", "판매액"]
