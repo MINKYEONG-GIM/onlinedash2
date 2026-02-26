@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""브랜드별·시즌별 스타일 입고/출고/온라인등록 실시간 모니터링. 실행: streamlit run spao_style_dashboard.py"""
+"""브랜드별·시즌별 스타일 입고/출고/온라인등록 실시간 모니터링. """
 from __future__ import annotations
 
 import os
@@ -863,46 +863,3 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
-
-
-
-import gspread
-from google.oauth2.service_account import Credentials
-
-# 1. credentials
-credentials = Credentials.from_service_account_info(
-    st.secrets["google_service_account"],
-    scopes=["https://www.googleapis.com/auth/spreadsheets"]
-)
-
-# 2. gspread client
-gc = gspread.authorize(credentials)
-
-# 3. 스프레드시트 열기 (여기서 sh 생성됨)
-sh = gc.open_by_key(ONLINE_SPREADSHEET_ID)
-
-# ===============================
-# ✅ 여기부터 추가해야 함
-# ===============================
-
-st.subheader("📄 Online Spreadsheet 구조 확인")
-
-worksheets = sh.worksheets()
-st.write(f"워크시트 개수: {len(worksheets)}")
-
-for ws in worksheets:
-    st.markdown("---")
-    st.markdown(f"### 워크시트: **{ws.title}**")
-
-    header = ws.row_values(1)
-
-    if header:
-        st.write("컬럼 목록:")
-        for col in header:
-            st.write(f"- [{col}]")
-    else:
-        st.warning("컬럼 없음 (빈 워크시트)")
-
-# ===============================
-# ❌ 이 위에 두면 NameError 난다
-# ===============================
