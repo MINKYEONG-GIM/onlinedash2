@@ -716,8 +716,8 @@ monitor_df = table_df.copy()
 monitor_df["_등록율"] = monitor_df.apply(lambda r: "-" if r["브랜드"] in NO_REG_SHEET_BRANDS else str(int(r["온라인등록율"] * 100) if r["온라인등록율"] >= 0 else 0) + "%", axis=1)
 monitor_df = monitor_df.sort_values("입고스타일수", ascending=False).reset_index(drop=True)
 
-TOOLTIP_RATE = "(초록불) 90% 초과&#10;(노란불) 80% 초과&#10;(빨간불) 80% 이하"
-TOOLTIP_AVG = "(초록불) 3일 이하&#10;(노란불) 5일 이하&#10;(빨간불) 5일 초과"
+TOOLTIP_RATE = "(초록불) 90% 초과&#10;\n(노란불) 80% 초과&#10;\n(빨간불) 80% 이하"
+TOOLTIP_AVG = "(초록불) 3일 이하&#10;\n(노란불) 5일 이하&#10;\n(빨간불) 5일 초과"
 rate_tooltip = TOOLTIP_RATE
 avg_tooltip = TOOLTIP_AVG
 
