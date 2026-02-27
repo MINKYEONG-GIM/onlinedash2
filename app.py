@@ -934,7 +934,7 @@ except Exception:
 
 
 st.markdown(
-    "<div style='margin-top:12px; font-size:12px; color:#9ca3af;'>"
+    "<div style='margin-top:8px; font-size:20px; color:#9ca3af;'>"
     "문의가 있으면 CAIO실 김민경(kim_minkyeong07@eland.co.kr)로 부탁드립니다"
     "</div>",
     unsafe_allow_html=True
