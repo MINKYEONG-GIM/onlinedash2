@@ -931,3 +931,11 @@ try:
 except Exception:
     inout_html, _ = _build_inout_table_html(display_df)
     st.markdown(inout_html, unsafe_allow_html=True)
+
+
+st.markdown(
+    "<div style='margin-top:12px; font-size:12px; color:#9ca3af;'>"
+    "문의가 있으면 CAIO실 김민경(kim_minkyeong07@eland.co.kr)로 부탁드립니다"
+    "</div>",
+    unsafe_allow_html=True
+)
