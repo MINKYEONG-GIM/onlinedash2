@@ -783,8 +783,8 @@ def _th_sort(label, col_index):
     inner = label + f"<a class='sort-arrow' href='javascript:void(0)' role='button' data-col='{col_index}' title='정렬'>↕</a>"
     return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
-th_rate = '<th class="th-sort col-small" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="온라인등록 스타일수 / 온라인상품 입고스타일수">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
-th_avg_total = f'<th class="th-sort col-small"><span class="avg-help tt-follow" data-tooltip="{avg_tooltip}">전체 온라인등록<br>소요일</span></th>'
+th_rate = '<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="온라인등록 스타일수 / 온라인상품 입고스타일수">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
+th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follow" data-tooltip="{avg_tooltip}">전체 온라인등록<br>소요일</span></th>'
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계<br>소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록<br>소요일</span></th>'
@@ -832,7 +832,7 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table{{width:100%;border-collapse:collapse;background:#1e293b;color:#f1f5f9}}
 .monitor-table th,.monitor-table td{{border:none;padding:6px 8px;text-align:center;font-size:0.95rem}}
 .monitor-table thead th{{background:#0f172a;color:#f1f5f9;font-weight:700}}
-.monitor-table thead th.col-emphasis{{border:3px solid #fbbf24}}
+.monitor-table thead th.col-emphasis{{border:none solid #fbbf24}}
 .monitor-table tr.bu-row td{{background:#d9f7ee;color:#000;font-size:1.15rem;font-weight:700}}
 .monitor-table th.th-sort{{white-space:nowrap;cursor:default}}
 .monitor-table th.th-sort .sort-arrow{{color:#94a3b8;text-decoration:none;margin-left:4px;font-size:0.75rem;cursor:pointer}}
@@ -851,7 +851,7 @@ body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:inherit}}
 .monitor-table{{table-layout:fixed}}
 .monitor-table th.col-small,.monitor-table td.col-small{{width:90px;min-width:90px;max-width:90px;box-sizing:border-box}}
 .monitor-table th.col-emphasis,.monitor-table td.col-emphasis{{width:120px;min-width:120px;max-width:120px;box-sizing:border-box}}
-.monitor-table thead th.col-emphasis{{border:3px solid #fbbf24}}
+.monitor-table thead th.col-emphasis{{border:none solid #fbbf24}}
 #tooltip-follow{{position:fixed;display:none;white-space:pre-line;width:max-content;max-width:360px;background:#ffffff;color:#1e293b;padding:8px 12px;border-radius:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #e2e8f0;z-index:9999;pointer-events:none}}
 html,body{{height:100%;margin:0;overflow:hidden}}
 .table-wrap{{height:100%;max-height:100%;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch}}
