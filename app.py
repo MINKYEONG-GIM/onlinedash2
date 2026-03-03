@@ -810,7 +810,7 @@ def _row_monitor(r):
         f"<td class='col-small'>{avg_register}</td>"
         f"<td class='col-emphasis'>{avg_total}</td>"
     )
-
+th_online_in = ""
 
 body_monitor = "".join(("<tr class='bu-row'>" if r["브랜드"] in bu_labels else "<tr>") + _row_monitor(r) + "</tr>" for _, r in monitor_df.iterrows())
 
