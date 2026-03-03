@@ -703,21 +703,11 @@ all_brands = sorted(df_style_all["브랜드"].unique())
 table_df = pd.DataFrame({"브랜드": all_brands})
 # 물류입고스타일수: base 스프레드시트 "물류입고스타일수" 시트 기준 (df_in은 이미 해당 시트에서 생성됨)
 table_df["물류입고스타일수"] = table_df["브랜드"].map(df_in.groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
-# 온라인입고스타일수: base 스프레드시트 "온라인입고스타일수" 시트에서 브랜드별 스타일 수
-base_bytes = sources.get("inout", (None, None))[0]
-df_online_in = load_base_inout(base_bytes, _cache_key="inout_온라인입고", target_sheet_name="온라인입고스타일수") if base_bytes else pd.DataFrame()
-if not df_online_in.empty:
-    style_col_oi = find_col(["스타일코드", "스타일"], df=df_online_in)
-    brand_col_oi = "브랜드" if "브랜드" in df_online_in.columns else None
-    if style_col_oi and brand_col_oi:
-        table_df["온라인입고스타일수"] = table_df["브랜드"].map(df_online_in.groupby("브랜드")[style_col_oi].nunique()).fillna(0).astype(int)
-    else:
-        table_df["온라인입고스타일수"] = 0
-else:
-    table_df["온라인입고스타일수"] = 0
+
+
 table_df["온라인등록스타일수"] = table_df["브랜드"].map(df_in[df_in["온라인상품등록여부"] == "등록"].groupby("브랜드")["스타일코드"].nunique()).fillna(0).astype(int)
 # 온라인등록율 = 브랜드별 (온라인등록스타일수 / 온라인입고스타일수), 단위 %
-denom = table_df["온라인입고스타일수"].replace(0, pd.NA)
+denom = table_df["물류입고스타일수"].replace(0, pd.NA)
 table_df["온라인등록율"] = (table_df["온라인등록스타일수"] / denom).fillna(0).round(2)
 table_df["전체 미등록스타일"] = table_df["물류입고스타일수"] - table_df["온라인등록스타일수"]
 table_df["등록수"] = table_df["온라인등록스타일수"]
@@ -783,7 +773,7 @@ def _th_sort(label, col_index):
     inner = label + f"<a class='sort-arrow' href='javascript:void(0)' role='button' data-col='{col_index}' title='정렬'>↕</a>"
     return f"<th class='th-sort col-small' data-col-index='{col_index}' data-order='desc'>{inner}</th>"
 
-th_rate = '<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="온라인등록 스타일수 / 온라인상품 입고스타일수">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
+th_rate = '<th class="th-sort col-emphasis" data-col-index="4" data-order="desc"><span class="rate-help tt-follow" data-tooltip="온라인등록 스타일수 / 물류입고 입고스타일수">온라인등록율</span><a class="sort-arrow" href="javascript:void(0)" role="button" data-col="4" title="정렬">↕</a></th>'
 th_avg_total = f'<th class="th-sort col-emphasis"><span class="avg-help tt-follow" data-tooltip="{avg_tooltip}">전체 온라인등록<br>소요일</span></th>'
 th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="최초입고 ~&#10; 포토팀수령 소요일">포토인계<br>소요일</span></th>'
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
