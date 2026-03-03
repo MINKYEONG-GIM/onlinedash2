@@ -215,7 +215,7 @@ def _find_register_header(df_raw):
     return None, None
 
 # ---- BASE 입출고 ----
-# target_sheet_name: 지정 시 해당 워크시트 사용 (예: "물류입고스타일수", "온라인입고스타일수"). 미지정 시 기존처럼 첫 번째 비-_ 시트 사용.
+# target_sheet_name: 지정 시 해당 워크시트 사용 (예: "물류입고스타일수"). 미지정 시 기존처럼 첫 번째 비-_ 시트 사용.
 @st.cache_data(ttl=300)
 def load_base_inout(io_bytes=None, _cache_key=None, target_sheet_name=None):
     if io_bytes is None or len(io_bytes) == 0:
@@ -779,8 +779,6 @@ th_photo_handover = '<th class="th-sort col-small"><span class="avg-help" data-t
 th_photo = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="촬영샘플 수령 ~&#10;제품컷완성 소요일">포토 소요일</span></th>'
 th_register = '<th class="th-sort col-small"><span class="avg-help" data-tooltip="제품컷 완성 ~&#10;온라인등록 소요일">상품등록<br>소요일</span></th>'
 
-header_monitor = "<tr><th class='col-small'>브랜드</th>" + _th_sort("물류입고<br>스타일수", 1) + th_online_in + _th_sort("온라인등록<br>스타일수", 3) + th_rate + th_photo_handover + th_photo + th_register + th_avg_total + "</tr>"
-
 def _fmt(n):
     return f"{int(n):,}"
 
@@ -805,7 +803,6 @@ def _row_monitor(r):
     return (
         f"<td class='col-small'>{safe_cell(r['브랜드'])}</td>"
         f"<td class='col-small'>{_fmt(r['물류입고스타일수'])}</td>"
-        f"<td class='col-small'>{_fmt(r.get('온라인입고스타일수', 0))}</td>"
         f"<td class='col-small'>{reg_sty_display}</td>"
         f"<td class='col-emphasis'>{rate_cell}</td>"
         f"<td class='col-small'>{avg_photo_handover}</td>"
