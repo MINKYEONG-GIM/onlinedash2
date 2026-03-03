@@ -811,6 +811,18 @@ def _row_monitor(r):
         f"<td class='col-emphasis'>{avg_total}</td>"
     )
 th_online_in = ""
+header_monitor = """
+<tr>
+<th class='col-small'>브랜드</th>
+<th>물류입고<br>스타일수</th>
+<th>온라인등록<br>스타일수</th>
+<th>온라인등록율</th>
+<th>평균전체등록<br>소요일수</th>
+<th>포토인계<br>소요일수</th>
+<th>포토<br>소요일수</th>
+<th>상품등록<br>소요일수</th>
+</tr>
+"""
 
 body_monitor = "".join(("<tr class='bu-row'>" if r["브랜드"] in bu_labels else "<tr>") + _row_monitor(r) + "</tr>" for _, r in monitor_df.iterrows())
 
